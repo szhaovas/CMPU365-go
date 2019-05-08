@@ -992,8 +992,8 @@
 
 
 
-(setf g (make-gomoku :num-open 25 :board (make-array '(5 5) :initial-element *blank*) :win-lineup-num 5))
-(compute-do-and-show-n-moves g 4)
+;(setf g (make-gomoku :num-open 25 :board (make-array '(5 5) :initial-element *blank*) :win-lineup-num 5))
+;(compute-do-and-show-n-moves g 4)
 
 
 

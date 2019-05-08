@@ -390,20 +390,26 @@
 ;;  SIDE EFFECT:  Displays the entire game using UCT-SEARCH to compute best moves
 ;;    for both players according to the specified parameters.
 
+(defun new-gomoku
+  (dim win)
+  (make-gomoku :num-open (* dim dim)
+               :board (make-array '(dim dim) :initial-element *blank*)
+               :win-lineup-num win))
+
 (defun compete
     (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* t)
-  (let ((g (new-othello)))
+  (let ((g (new-othello 5 5)))
     (while (not (game-over? g))
       (cond
        ((eq (whose-turn g) *black*)
 	(format t "BLACK'S TURN!~%")
 	(format t "~A~%"
-		(apply #'do-move! g nil (uct-search g black-num-sims black-c))))
+		(apply #'do-move! g nil (mc-rave g black-num-sims black-k))))
        (t
 	(format t "WHITE'S TURN!~%")
 	(format t "~A~%"
-		(apply #'do-move! g nil (uct-search g white-num-sims white-c))))))))
+		(apply #'do-move! g nil (mc-rave g white-num-sims white-k))))))))
 
 
 ;;  COMPETE-NO-PRINTING
@@ -411,15 +417,15 @@
 ;;  Same as COMPETE, but only shows the end result
 
 (defun compete-no-printing
-    (black-num-sims black-c white-num-sims white-c)
+    (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* nil)
-  (let ((g (new-othello)))
+  (let ((g (new-othello 5 5)))
     (while (not (game-over? g))
       (cond
        ((eq (whose-turn g) *black*)
 	(format t "B ")
-	(apply #'do-move! g nil (uct-search g black-num-sims black-c)))
+	(apply #'do-move! g nil (mc-rave g black-num-sims black-k)))
        (t
 	(format t "W ")
-	(apply #'do-move! g nil (uct-search g white-num-sims white-c)))))
+	(apply #'do-move! g nil (mc-rave g white-num-sims white-k)))))
     (format t "~%~A~%" g)))
