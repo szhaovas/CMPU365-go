@@ -228,13 +228,13 @@
 
 (defun sim-default
   (game)
-  (let ((move-acc nil))
+  (let ((move-accabc nil))
     (while (not (game-over? game))
       (let ((move (random-move game)))
         (apply #'do-move! game move)
-        (push move move-acc)))
-    (push (eval-func game) move-acc)
-    (reverse move-acc)))
+        (push move move-accabc)))
+    (push (eval-func game) move-accabc)
+    (reverse move-accabc)))
 
 ;;  BACKUP
 ;; ---------------------------------------------------
@@ -357,9 +357,9 @@
               	     ;; Phase 1:  SIM-TREE Destructively modifies game
               	     (key-move-acc (sim-tree game tree k))
               	     ;; Phase 2:  SIM-DEFAULT returns result
-              	     (move-acc (sim-default game)))
+              	     (move-accabc (sim-default game)))
               	;; Finally, backup the results
-              	(backup hashy key-move-acc move-acc)))
+              	(backup hashy key-move-acc move-accabc)))
     ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
        	   (mv-index (select-move rootie k))
