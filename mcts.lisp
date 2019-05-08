@@ -126,10 +126,11 @@
 ;;  OUTPUT:  The INDEX of the selected move into the moves vector
 
 (defun select-move
-  (nodey c)
-  (let* ((player (mc-node-whose-turn nodey))
-       	 (moves (mc-node-veck-moves nodey))
-       	 (num-moves (length moves)))
+  (nodey k)
+  (let*
+    ((player (mc-node-whose-turn nodey))
+   	 (moves (mc-node-veck-moves nodey))
+   	 (num-moves (length moves)))
     (cond
       ;; No legal moves!
       ((= num-moves 0)
@@ -141,49 +142,38 @@
        0)
       ;; Two or more moves
       (t
-       ;; Need to find argmax/argmin of
-       ;;   Q(s,a)  +/-  c*sqrt(log(N(s))/N(s,a))
-       ;; Note:  Can be called with c=0 or c>0.
-       ;;        But if c=0, we can assume n>0 (i.e., *some*
-       ;;          node has already been visited)
-       (let ((n (mc-node-num-visits nodey))
-        	    (move-visits (mc-node-veck-visits nodey))
-        	    (move-scores (mc-node-veck-scores nodey))
-        	    (best-move-so-far nil)
-        	    (best-score-so-far (if (eq player *black*)
-                           				   *neg-inf*
-                             				 *pos-inf*)))
-        	(dotimes (i num-moves)
-               	  ;; When c>0 and this move has not yet been visited
-               	  ;; Then we want to select it immediately!
-               	  (when (and (> c 0)
-                      		     (= (svref move-visits i) 0))
-               	    (return-from select-move i))
-               	  ;; When c=0 and this move has not yet been visited
-               	  ;; Ignore this move!  (I.e., only proceed if it *has*
-               	  ;; been visited at least once.)
-               	  (when (> (svref move-visits i) 0)
-               	    ;; Fetch average score for this move
-               	    (let ((score (svref move-scores i)))
-               	      ;; When C > 0, update score using UGLY term
-               	      (when (> c 0)
-                      		(let ((ugly-term (* c (sqrt (/ (log n)
-                                           					       (svref move-visits i))))))
-                      		  (if (eq player *black*)
-                    		      (incf score ugly-term)
-                      		    (decf score ugly-term))))
-               	      ;; When SCORE is better than best-score-so-far...
-               	      (when (or (and (eq player *black*)
-                             			     (> score best-score-so-far))
-                             			(and (eq player *white*)
-                             			     (< score best-score-so-far)))
-                      		;; Update best-score/move-so-far
-                      		(setf best-score-so-far score)
-                      		(setf best-move-so-far i)))))
+       (let*
+         ((n (mc-node-num-visits nodey))
+          (beta (sqrt (/ k (+ (* n 3) k))))
+          (mc-scoress (mc-node-veck-scores nodey))
+          (amaf-scoress (mc-node-amaf-scores nodey))
+     	    (best-move-so-far nil)
+     	    (best-score-so-far (if (eq player *black*)
+                               *neg-inf*
+                               *pos-inf*)))
+         (dotimes
+          (i num-moves)
+     	    ;; Fetch weighted score for this move
+     	    (let*
+            ((mc-score (svref mc-scoress i))
+             (amaf-score (svref amaf-scoress i))
+             (weighted-score (+ (* (- 1 beta) mc-score) (* beta amaf-score))))
+     	      ;; When SCORE is better than best-score-so-far...
+     	      (when
+              (or
+               (and
+                (eq player *black*)
+                (> weighted-score best-score-so-far))
+               (and
+                (eq player *white*)
+                (< weighted-score best-score-so-far)))
+              ;; Update best-score/move-so-far
+              (setf best-score-so-far weighted-score)
+              (setf best-move-so-far i))))
         	;; Return best-move-so-far or (if NIL) a random move
-        	(if best-move-so-far
-      	    best-move-so-far
-        	  (random num-moves)))))))
+         (if best-move-so-far
+           best-move-so-far
+           (random num-moves)))))))
 
 
 ;;  SIM-TREE
@@ -196,7 +186,7 @@
 ;;    is an index into the MOVES vector of the node assoc with state_i.
 
 (defun sim-tree
-  (game tree c)
+  (game tree k)
   (let (;; KEY-MOVE-ACC:  accumulator of KEYs and MOVEs
        	(key-move-acc nil)
        	(hashy (mc-tree-hashy tree)))
@@ -209,9 +199,9 @@
        	(when (null nodey)
        	  ;; Create new node and insert it into tree
        	  (setf nodey (insert-new-node game tree key))
-       	  (let* ((mv-index (select-move nodey c))
-              		 (move-veck (mc-node-veck-moves nodey))
-              		 (move (svref move-veck mv-index)))
+       	  (let* ((mv-index (select-move nodey k))
+                 (move-veck (mc-node-veck-moves nodey))
+                 (move (svref move-veck mv-index)))
        	    (apply #'do-move! game nil move)
        	    (push key key-move-acc)
        	    (push mv-index key-move-acc)
@@ -220,7 +210,7 @@
        	    (return-from sim-tree (reverse key-move-acc))))
 
        	;; Case 2:  Key already in tree!
-       	(let* ((mv-index (select-move nodey c))
+       	(let* ((mv-index (select-move nodey k))
        	       (move-veck (mc-node-veck-moves nodey))
        	       (move (svref move-veck mv-index)))
        	  (apply #'do-move! game nil move)
@@ -316,9 +306,9 @@
        (mc-scores (mc-node-veck-scores nodey))
        (amaf-visits (mc-node-amaf-visits nodey))
        (amaf-scores (mc-node-amaf-scores nodey)))
-      ;; increment num times did this move from this state
+      ;; increment MC stats
+      (incf (mc-node-num-visits nodey))
       (incf (svref mc-visits mv-index))
-      ;; increment the SCORE
       (incf (svref mc-scores mv-index)
        	    (/ (- result (svref mc-scores mv-index))
        	       (svref mc-visits mv-index)))
@@ -353,8 +343,8 @@
 
 (defparameter *verbose* t) ;; a global parameter used to ensure/suppress printing of stats
 
-(defun uct-search
-  (orig-game num-sims c)
+(defun mc-rave
+  (orig-game num-sims k)
   ;; Want to use COPY of GAME struct for simulations...
   ;; That way, can reset game struct before each simulation...
   (let* ((tree (new-mc-tree orig-game))
@@ -365,14 +355,14 @@
              (let* (;; Work with a COPY of the original game struct
               	     (game (copy-game orig-game))
               	     ;; Phase 1:  SIM-TREE Destructively modifies game
-              	     (key-move-acc (sim-tree game tree c))
+              	     (key-move-acc (sim-tree game tree k))
               	     ;; Phase 2:  SIM-DEFAULT returns result
-              	     (playout-result (sim-default game)))
+              	     (move-acc (sim-default game)))
               	;; Finally, backup the results
-              	(backup hashy key-move-acc playout-result)))
+              	(backup hashy key-move-acc move-acc)))
     ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
-       	   (mv-index (select-move rootie 0))
+       	   (mv-index (select-move rootie k))
        	   (move (svref (mc-node-veck-moves rootie) mv-index))
        	   (scores (mc-node-veck-scores rootie))
        	   (score (svref scores mv-index)))
@@ -401,7 +391,7 @@
 ;;    for both players according to the specified parameters.
 
 (defun compete
-    (black-num-sims black-c white-num-sims white-c)
+    (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* t)
   (let ((g (new-othello)))
     (while (not (game-over? g))
