@@ -393,7 +393,7 @@
 (defun new-gomoku
   (dim win)
   (make-gomoku :num-open (* dim dim)
-               :board (make-array '(dim dim) :initial-element *blank*)
+               :board (make-array (list dim dim) :initial-element *blank*)
                :win-lineup-num win))
 
 (defun compete
