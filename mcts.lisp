@@ -357,9 +357,9 @@
               	     ;; Phase 1:  SIM-TREE Destructively modifies game
               	     (key-move-acc (sim-tree game tree k))
               	     ;; Phase 2:  SIM-DEFAULT returns result
-              	     (move-accabc (sim-default game)))
+              	     (move-acc (sim-default game)))
               	;; Finally, backup the results
-              	(backup hashy key-move-acc move-accabc)))
+              	(backup hashy key-move-acc move-acc)))
     ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
        	   (mv-index (select-move rootie k))
