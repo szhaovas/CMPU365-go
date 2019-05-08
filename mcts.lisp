@@ -267,7 +267,7 @@
        (nth (+ (* i 2) 1) key-move-acc))
       ;; accumulator
       simtree-moves))
-    (setf move-acc (append (reverse simtree-moves) (move-acc)))))
+    (setf move-acc (append (reverse simtree-moves) move-acc))))
 
 (defun sublist-member
   (item listy till)
