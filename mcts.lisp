@@ -402,7 +402,7 @@
   (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
-       ((eq (whose-turn g) *black*)
+       ((eq (mc-node-whose-turn g) *black*)
 	(format t "BLACK'S TURN!~%")
 	(format t "~A~%"
 		(apply #'do-move! g nil (mc-rave g black-num-sims black-k))))
@@ -422,7 +422,7 @@
   (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
-       ((eq (whose-turn g) *black*)
+       ((eq (mc-node-whose-turn g) *black*)
 	(format t "B ")
 	(apply #'do-move! g nil (mc-rave g black-num-sims black-k)))
        (t
