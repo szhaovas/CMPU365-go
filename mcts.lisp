@@ -113,7 +113,7 @@
               		 :veck-scores (make-array num-moves :initial-element 0)
                    :amaf-visits (make-array num-moves :initial-element 0)
                    :amaf-scores (make-array num-moves :initial-element 0)
-              		 :whose-turn (whose-turn game))))
+              		 :whose-turn (gomoku-whose-turn game))))
     ;; insert nodey into tree
     (setf (gethash key (mc-tree-hashy tree)) nodey)
     ;; return the node
@@ -402,7 +402,7 @@
   (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
-       ((eq (mc-node-whose-turn g) *black*)
+       ((eq (gomoku-whose-turn g) *black*)
 	(format t "BLACK'S TURN!~%")
 	(format t "~A~%"
 		(apply #'do-move! g nil (mc-rave g black-num-sims black-k))))
@@ -422,7 +422,7 @@
   (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
-       ((eq (mc-node-whose-turn g) *black*)
+       ((eq (gomoku-whose-turn g) *black*)
 	(format t "B ")
 	(apply #'do-move! g nil (mc-rave g black-num-sims black-k)))
        (t
