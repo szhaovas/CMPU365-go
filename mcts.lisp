@@ -202,7 +202,7 @@
        	  (let* ((mv-index (select-move nodey k))
                  (move-veck (mc-node-veck-moves nodey))
                  (move (svref move-veck mv-index)))
-       	    (apply #'do-move! game nil move)
+       	    (apply #'do-move! game move)
        	    (push key key-move-acc)
        	    (push mv-index key-move-acc)
        	    ;; return the accumulator prepended with selected MOVE
@@ -213,7 +213,7 @@
        	(let* ((mv-index (select-move nodey k))
        	       (move-veck (mc-node-veck-moves nodey))
        	       (move (svref move-veck mv-index)))
-       	  (apply #'do-move! game nil move)
+       	  (apply #'do-move! game move)
        	  (push key key-move-acc)
        	  (push mv-index key-move-acc))))
 
@@ -231,7 +231,7 @@
   (let ((move-acc nil))
     (while (not (game-over? game))
       (let ((move (random-move game)))
-        (apply #'do-move! game nil move)
+        (apply #'do-move! game move)
         (push move move-acc)))
     (push (eval-func game) move-acc)
     (reverse move-acc)))
@@ -405,11 +405,11 @@
        ((eq (gomoku-whose-turn g) *black*)
 	(format t "BLACK'S TURN!~%")
 	(format t "~A~%"
-		(apply #'do-move! g nil (mc-rave g black-num-sims black-k))))
+		(apply #'do-move! g (mc-rave g black-num-sims black-k))))
        (t
 	(format t "WHITE'S TURN!~%")
 	(format t "~A~%"
-		(apply #'do-move! g nil (mc-rave g white-num-sims white-k))))))))
+		(apply #'do-move! g (mc-rave g white-num-sims white-k))))))))
 
 
 ;;  COMPETE-NO-PRINTING
@@ -424,8 +424,8 @@
       (cond
        ((eq (gomoku-whose-turn g) *black*)
 	(format t "B ")
-	(apply #'do-move! g nil (mc-rave g black-num-sims black-k)))
+	(apply #'do-move! g (mc-rave g black-num-sims black-k)))
        (t
 	(format t "W ")
-	(apply #'do-move! g nil (mc-rave g white-num-sims white-k)))))
+	(apply #'do-move! g (mc-rave g white-num-sims white-k)))))
     (format t "~%~A~%" g)))
