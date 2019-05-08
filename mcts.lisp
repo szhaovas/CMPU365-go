@@ -228,13 +228,13 @@
 
 (defun sim-default
   (game)
-  (let ((move-accabc nil))
+  (let ((move-acc nil))
     (while (not (game-over? game))
       (let ((move (random-move game)))
         (apply #'do-move! game move)
-        (push move move-accabc)))
-    (push (eval-func game) move-accabc)
-    (reverse move-accabc)))
+        (push move move-acc)))
+    (push (eval-func game) move-acc)
+    (reverse move-acc)))
 
 ;;  BACKUP
 ;; ---------------------------------------------------
