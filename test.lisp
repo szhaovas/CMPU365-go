@@ -17,7 +17,7 @@
 (defun compete
     (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* t)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
        ((eq (gomoku-whose-turn g) *black*)
@@ -32,7 +32,7 @@
 (defun compete-uct
   (black-num-sims black-k black-c white-num-sims white-k white-c)
   (setf *verbose* t)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
         ((eq (gomoku-whose-turn g) *black*)
@@ -52,7 +52,7 @@
 (defun compete-no-printing
     (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* nil)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
        ((eq (gomoku-whose-turn g) *black*)
@@ -66,7 +66,7 @@
 (defun compete-uct-no-printing
   (black-num-sims black-k black-c white-num-sims white-k white-c)
   (setf *verbose* nil)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
         ((eq (gomoku-whose-turn g) *black*)
@@ -80,7 +80,7 @@
 (defun compete-i-mcrave
   (black-num-sims black-k)
   (setf *verbose* t)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
         ((eq (gomoku-whose-turn g) *black*)
@@ -95,7 +95,7 @@
 (defun compete-i-uctrave
   (black-num-sims black-k black-c)
   (setf *verbose* t)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
         ((eq (gomoku-whose-turn g) *black*)
@@ -110,7 +110,7 @@
 (defun compete-mcuct
   (black-num-sims black-c white-num-sims white-c)
   (setf *verbose* t)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
         ((eq (gomoku-whose-turn g) *black*)
@@ -125,7 +125,7 @@
 (defun compete-mcrave-benchmark
   (black-num-sims black-k)
   (setf *verbose* nil)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
         ((eq (gomoku-whose-turn g) *black*)
@@ -137,7 +137,7 @@
 (defun compete-uctrave-benchmark
   (black-num-sims black-k black-c)
   (setf *verbose* nil)
-  (let ((g (new-gomoku 7 5)))
+  (let ((g (new-gomoku 5 5)))
     (while (not (game-over? g))
       (cond
         ((eq (gomoku-whose-turn g) *black*)
