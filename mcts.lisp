@@ -208,7 +208,7 @@
 	  (let* ((mv-index (select-move-mcuct nodey c))
 		 (move-veck (uct-node-veck-moves nodey))
 		 (move (svref move-veck mv-index)))
-	    (apply #'do-move! game nil move)
+	    (apply #'do-move! game move)
 	    (push key key-move-acc)
 	    (push mv-index key-move-acc)
 	    ;; return the accumulator prepended with selected MOVE
@@ -219,7 +219,7 @@
 	(let* ((mv-index (select-move-mcuct nodey c))
 	       (move-veck (uct-node-veck-moves nodey))
 	       (move (svref move-veck mv-index)))
-	  (apply #'do-move! game nil move)
+	  (apply #'do-move! game move)
 	  (push key key-move-acc)
 	  (push mv-index key-move-acc))))
 
