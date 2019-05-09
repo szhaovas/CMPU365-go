@@ -372,7 +372,7 @@
               	     ;; Phase 2:  SIM-DEFAULT returns result
               	     (move-acc (sim-default game)))
               	;; Finally, backup the results
-               (format t "--------------------------------------backup~A~%" i)
+               ;(format t "--------------------------------------backup~A~%" i)
               	(backup hashy key-move-acc move-acc)))
     ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
@@ -380,21 +380,23 @@
        	   (move (svref (mc-node-veck-moves rootie) mv-index))
        	   (scores (mc-node-veck-scores rootie))
        	   (score (svref scores mv-index))
-           (amaf-visits (mc-node-amaf-visits rootie)))
+           (amaf-visits (mc-node-amaf-visits rootie))
+           (amaf-scores (mc-node-amaf-scores rootie)))
       (format t ".")
       (when *verbose*
        	;; Display some stats along with the best move
-        (format t "move veck: ~A~%" (mc-node-veck-moves rootie))
-       	(format t "Best score: ~5,3F score veck: " score)
+        ;(format t "move veck: ~A~%" (mc-node-veck-moves rootie))
+       	(format t "mc-scores veck: ")
        	(dotimes (i (length scores))
-              	  (format t "~5,3F, " (svref scores i)))
+                	(format t "~5,3F, " (svref scores i)))
        	(format t "~%")
-       	(format t "Visits veck: ")
+       	(format t "mc-visits veck: ")
        	(dotimes (i (length scores))
               	  (format t "~A " (svref (mc-node-veck-visits rootie) i)))
         (format t "~%")
         (format t "AMAF Visits veck: ~A" amaf-visits)
-       	(format t "~%"))
+       	(format t "~%")
+        (format t "AMAF Scores veck ~A~%" amaf-scores))
       ;; Output the move
       move)))
 
