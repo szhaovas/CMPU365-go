@@ -52,7 +52,7 @@
 
 ;;  ROW-COL->POSN
 ;; ------------------------------------------
-;;  INPUTS:  ROW, COL, two integers each between 0 and N - 1,
+;;  INPUTS:  ROW, COL, two integers each between 0 and N - 1, 
 ;;           N is the dimension of board
 ;;  OUTPUT:  The corresponding POSN (an integer between 0 and N * N - 1)
 
@@ -101,8 +101,8 @@
 (defmacro place-token-at-posn
     (board token posn n)
     `(setf (aref ,board (posn->row ,posn, n) (posn->col ,posn, n)) ,token))
-
-
+        
+  
 
 ;;  PLACE-TOKEN
 ;; -------------------------------------------------------------------
@@ -127,15 +127,15 @@
 ;; --------------------------------------------------------
 
 (defstruct (gomoku (:print-function print-gomoku))
-  ;; BOARD:  an 9-by-9 array of *white*, *black* or *blank*
-  (board (make-array '(9 9) :initial-element *blank*))
+  ;; BOARD:  an 9-by-9 array of *white*, *black* or *blank* 
+  (board (make-array '(9 9) :initial-element *blank*))      
   ;; WHOSE-TURN:  either *BLACK* or *WHITE*
   (whose-turn *black*)
   ;; NUM-OPEN:  the number of open spaces on the BOARD (always <= N * N)
   (num-open 81)
   ;; WHITE-PIECES/BLACK-PIECES:  (N*N)-bit integers
-  (white-pieces 0)
-  (black-pieces 0)
+  (white-pieces 0) 
+  (black-pieces 0) 
   ;; win policy, i.e., how many in a row is a win
   ;; default is 5
   (win-lineup-num 5)
@@ -148,7 +148,7 @@
 
 (defun init-gomoku
     (dim win-lineup-num)
-    (make-gomoku
+    (make-gomoku 
         :board (make-array '(dim dim) :initial-element *blank*)
         :num-open (* dim dim)
         :win-lineup-num win-lineup-num
@@ -183,8 +183,8 @@
                       (t *blank-show*)))))
       (format str "~%"))
     (format str "~%")
-    (format str "Whose turn: ~A~%"
-        (if-black-turn g *black-show* *white-show*))
+    (format str "Whose turn: ~A~%" 
+        (if-black-turn g *black-show* *white-show*)) 
     (format str "White Pieces: ~A~%" (gomoku-white-pieces g))
     (format str "Black Pieces: ~A~%" (gomoku-black-pieces g))
     (format str "Number Open: ~A~%" (gomoku-num-open g))
@@ -255,6 +255,11 @@
                  :initial-contents
                  '((1 1) (1 0) (0 1) (-1 1))))
 
+(defconstant *all-dirns* (make-array '(8 2)
+         :initial-contents
+         '((1 1) (1 0) (1 -1)
+           (0 1) (0 -1) 
+           (-1 1) (-1 0) (-1 -1))))
 
 ;;  LEGAL-MOVES
 ;; -------------------------------------------
@@ -262,7 +267,73 @@
 ;;  OUTPUT:  A VECTOR of the legal moves available to the current player.
 ;;  Note:  If no "legal" moves, then returns empty vector.
 
+;;  LEGAL-MOVES
+;; -------------------------------------------
+;;  INPUT:  GAME, an GOMOKU struct
+;;  OUTPUT:  A VECTOR of the legal moves available to the current player.
+;;  Note:  If no "legal" moves, then returns empty vector.
+
+(defun is-legal-coord
+  (x y n)
+  (not (or (< x 0) (< y 0) (>= x n) (>= y n))))
+
 (defmethod legal-moves
+    ((game gomoku))
+  (let* (
+    (moves nil)
+    (history (gomoku-history game))
+    (num-moves 0)
+    (num-cand (length history))
+    (N (first (array-dimensions (gomoku-board game))))
+    (collected (make-hash-table))
+    (is-legal? (gomoku-is-legal? game))
+    )
+    (if (= 0 num-cand) 
+      (return-from legal-moves 
+        (vector (list (floor (/ (- N 1) 2)) 
+          (floor (/ (- N 1) 2))))))
+
+    (dotimes (i num-cand)
+      (let* (
+          (cand-move (aref history i))
+          (ori-x (first cand-move))
+          (ori-y (second cand-move))
+          )
+        (loop for m in (list 1 2) do
+          (dotimes (j 5)
+            (let* (
+              (dx (- j 2))
+              (x (+ dx ori-x))
+              )
+              (dotimes (k 5)
+                (let* (
+                  (dy (- k 2))
+                  (y (+ dy ori-y))
+                  (key (row-col->posn x y n))
+                  )
+                  (cond
+                    ((and (is-legal-coord x y N)
+                      (funcall is-legal? game x y)
+                      (null (gethash key collected))
+                      )
+                      (setf (gethash key collected) (list x y))
+                      (push (list x y) moves)
+                      (incf num-moves)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+        )
+      )
+    (if (> num-moves 0)
+    (make-array num-moves :initial-contents moves)
+      ;; if no legal moves, then returns empty vector.
+      (vector))))
+
+(defmethod legal-moves2
     ((game gomoku))
   (let (
     (moves nil)
@@ -293,8 +364,8 @@
 ;; UNDO-MOVE!
 ;; -------------------------------------
 ;;  INPUTS:  GAME, an GOMOKU struct
-;;  OUTPUT:  The modified GAME:
-;;           affected variables:
+;;  OUTPUT:  The modified GAME: 
+;;           affected variables: 
 ;;           board, history, num-open, player-pieces, whose-turn
 
 (defmethod undo-move!
@@ -331,7 +402,7 @@
         (bored (gomoku-board game))
         (player (gomoku-whose-turn game))
         ;; player-pieces before this move
-        (player-pieces
+        (player-pieces 
             (if (eq player *black*)
                 (gomoku-black-pieces game)
                 (gomoku-white-pieces game)))
@@ -342,8 +413,8 @@
     (toggle-player! game)
     (decf (gomoku-num-open game))
     ;; record move
-    (vector-push-extend
-        (list row col)
+    (vector-push-extend 
+        (list row col) 
         (gomoku-history game))
     game
     )
@@ -372,7 +443,7 @@
     (let* (
         (board (gomoku-board game))
         (history (gomoku-history game))
-        (last-move
+        (last-move 
             (if (> (length history) 0)
                 (aref history (- (length history) 1))
                 nil))
@@ -382,15 +453,15 @@
         )
         ;; game has not started
         (if (not (null last-move))
-            ;; game started, check if last move makes consecutive
+            ;; game started, check if last move makes consecutive 
             (dotimes (i (first (array-dimensions *dirns*)))
-                (if (>=
+                (if (>= 
                         (count-consecutive-in-row
                             (list (aref *dirns* i 0) (aref *dirns* i 1))
-                            board
-                            last-move
+                            board 
+                            last-move 
                             (get-last-player game)
-                            N)
+                            N) 
                         win-num
                     )
                     (return-from who-wins? last-player))
@@ -420,10 +491,10 @@
 ;;  INPUT:  GAME, an GOMOKU struct
 ;;  OUTPUT: the last turn player
 
-(defmethod get-last-player
+(defmethod get-last-player 
     ((game gomoku))
-    (if (eq (gomoku-whose-turn game) *black*)
-        *white*
+    (if (eq (gomoku-whose-turn game) *black*) 
+        *white* 
         *black*))
 
 ;; COUNT-CONSECUTIVE-IN-ROW
@@ -443,14 +514,14 @@
         (cur-x (first last-move))
         (cur-y (second last-move))
         )
-        (-
+        (- 
             (+ (count-consecutive-in-dir
                     board
                     N
                     dir
                     player
                     cur-x
-                    cur-y
+                    cur-y 
                     )
                 (count-consecutive-in-dir
                     board
@@ -458,7 +529,7 @@
                     (reverse-dir dir)
                     player
                     cur-x
-                    cur-y
+                    cur-y 
                     ))
             1))
     )
@@ -489,17 +560,17 @@
             ;; if not same piece color
             ((not (eq player (aref board cur-x cur-y))) 0)
             ;; else
-            (T (+ 1
+            (T (+ 1 
                 (count-consecutive-in-dir
                     board
                     N
-                    dir
-                    player
-                    nx
+                    dir 
+                    player 
+                    nx 
                     ny)))
         )
     ))
-
+    
 ;;  RANDOM-MOVE
 ;; ------------------------------------------
 ;;  INPUT:  GAME, an GOMOKU struct
@@ -515,7 +586,7 @@
 ;; ------------------------------------------------
 ;;  INPUT:   GAME, an GOMOKU struct
 ;;  OUTPUT:  The modified game
-;;  SIDE EFFECT:  Destructively modifies GAME by doing one of the
+;;  SIDE EFFECT:  Destructively modifies GAME by doing one of the 
 ;;   legal moves available to the current player, chosen randomly.
 
 (defmethod do-random-move!
@@ -544,14 +615,14 @@
     ))
 
 
-(defmethod gomoku-shape-score
+(defmethod gomoku-shape-score2
     (consecutive open-ends is-my-turn)
     (if (>= consecutive 5) *win-value*)
     (if (= open-ends 0) 0)
     (cond
         ((= consecutive 4)
             ;; if my turn, guarantees a win
-            (if is-my-turn
+            (if is-my-turn 
                 *win-value*
                 (cond
                     ;; two ends, almost guarantees a win
@@ -564,58 +635,58 @@
             )
         ((= consecutive 3)
             (cond
-                ;; two ends,
+                ;; two ends, 
                 ;; if my turn, almost a win; else, high threat
-                ((= 2 open-ends)
-                    (if is-my-turn
-                        (/ *win-value* 8)
+                ((= 2 open-ends) 
+                    (if is-my-turn 
+                        (/ *win-value* 8) 
                         50)
                     )
                 ;; one ends, not so much a threat
-                (T
+                (T 
                     (if is-my-turn 25 12))
                 )
             )
         ((= consecutive 2)
             (cond
-                ;; two ends,
+                ;; two ends, 
                 ;; if my turn, potential threat; else, okay threat
-                ((= 2 open-ends)
-                    (if is-my-turn
+                ((= 2 open-ends) 
+                    (if is-my-turn 
                         25
                         6)
                     )
                 ;; one ends, not a threat at all
-                (T
+                (T 
                     (if is-my-turn 3 1))
                 )
             )
         ;; 1 consecutive
         (T
             (cond
-                ;; two ends,
+                ;; two ends, 
                 ;; if my turn, potential threat; else, okay threat
-                ((= 2 open-ends)
-                    (if is-my-turn
+                ((= 2 open-ends) 
+                    (if is-my-turn 
                         3
                         1)
                     )
                 ;; one ends, not a threat at all
-                (T
+                (T 
                     (if is-my-turn 1.5 0.5))
                 )
             )
         )
     )
 
-(defmethod gomoku-shape-score2
+(defmethod gomoku-shape-score
     (consecutive open-ends is-my-turn)
     (if (>= consecutive 3) *win-value*)
     (if (= open-ends 0) 0)
     (cond
         ((= consecutive 2)
             ;; if my turn, guarantees a win
-            (if is-my-turn
+            (if is-my-turn 
                 *win-value*
                 (cond
                     ;; two ends, almost guarantees a win
@@ -629,15 +700,15 @@
         ;; 1 consecutive
         (T
             (cond
-                ;; two ends,
+                ;; two ends, 
                 ;; if my turn, potential threat; else, okay threat
-                ((= 2 open-ends)
-                    (if is-my-turn
+                ((= 2 open-ends) 
+                    (if is-my-turn 
                         3
                         1)
                     )
                 ;; one ends, not a threat at all
-                (T
+                (T 
                     (if is-my-turn 1.5 0.5))
                 )
             )
@@ -718,11 +789,11 @@
         )
     (dotimes (i num-line)
         (let* (
-            (start-row
+            (start-row 
                 (if left-to-right
                     (if (< i N) (- N (+ 1 i)) 0)
                     (if (< i N) 0 (- (+ 1 i) N))))
-            (start-col
+            (start-col 
                 (if left-to-right
                     (if (< i N) 0 (- (+ i 1) N))
                     (if (< i N) i (- N 1))))
@@ -775,7 +846,7 @@
     score
     ))
 
-(defmethod eval-for
+(defmethod eval-for 
     ((game gomoku) player)
     (+ (eval-line-for game player T)
         (eval-line-for game player nil)
@@ -820,13 +891,13 @@
     (alpha (second result))
    )
     (format t "   ROOT NODE ALPHA: ~A~%" alpha)
-    (format t "   NUM-MOVES-DONE: ~A, NUM-MOVES-PRUNED: ~A~%"
+    (format t "   NUM-MOVES-DONE: ~A, NUM-MOVES-PRUNED: ~A~%" 
       (stats-num-moves-done statty)
       (- (stats-num-potential-moves statty) (stats-num-moves-done statty)))
     (format t "   BEST MOVE: ~A~%" best-move)
     ;; return my-move
     best-move))
-
+   
 
 ;;  COMPUTE-MAX / COMPUTE-MIN
 ;; ---------------------------------------------------------------
@@ -867,7 +938,7 @@
             (let ((move (aref moves i)))
                 ;; do move!
                 (apply #'do-move! g move)
-
+                
                 ;; increment move actually done stat
                 (incf (stats-num-moves-done statty))
 
@@ -893,7 +964,7 @@
 
           ;; if curr-depth is 0, return best move and alpha
           ;; else, return value
-          (if (= curr-depth 0)
+          (if (= curr-depth 0) 
             (list best-move alpha)
             value)
         )
@@ -942,7 +1013,7 @@
 
                 ;; increment move actually done stat
                 (incf (stats-num-moves-done statty))
-
+              
                 ;; record resulting value of chosen move
                 (let ((result (compute-max g (+ curr-depth 1) alpha beta statty cutoff-depth from-who)))
                     (setf value (min value result))
@@ -981,8 +1052,28 @@
         (apply #'do-move! g (compute-move g cutoff-depth (gomoku-whose-turn g)))
         (setf res (who-wins? g)))
     (format t "~%~A~%" g)
-    (format t "Result: ~A~%"
-        (cond
+    (format t "Result: ~A~%" 
+        (cond 
+            ((eq res *black*) *black-show*)
+            ((eq res *white*) *white-show*)
+            (T *draw*)
+        ))
+    res
+    ))
+
+(defun play
+    (g cutoff-depth c2)
+  ;; Do random moves until the game is over
+  (let ((res nil))
+    (loop while (null res) do
+        (format t "~%~A~%" g)
+        (if (eq *black* (gomoku-whose-turn g)) 
+          (apply #'do-move! g (compute-move g cutoff-depth (gomoku-whose-turn g)))
+          (apply #'do-move! g (compute-move g c2 (gomoku-whose-turn g))))
+        (setf res (who-wins? g)))
+    (format t "~%~A~%" g)
+    (format t "Result: ~A~%" 
+        (cond 
             ((eq res *black*) *black-show*)
             ((eq res *white*) *white-show*)
             (T *draw*)
@@ -992,11 +1083,14 @@
 
 
 
-;(setf g (make-gomoku :num-open 25 :board (make-array '(5 5) :initial-element *blank*) :win-lineup-num 5))
-;(compute-do-and-show-n-moves g 4)
 
 
+; (setf g (make-gomoku :num-open 25 :board (make-array '(5 5) :initial-element *blank*) :win-lineup-num 5))
+; (compute-do-and-show-n-moves g 4)
 
+; (setf g (make-gomoku :num-open 9 :board (make-array '(3 3) :initial-element *blank*) :win-lineup-num 3))
+; (play g 6 2)
+    
 ; (setf g (make-gomoku :num-open 81 :win-lineup-num 3))
 ; (print g)
 ; (setf g (do-move! g 3 3))
