@@ -321,9 +321,9 @@
     (if (eq result *draw*)
       0
       (if (eq result (gomoku-whose-turn orig-game))
-        (- result)
-        ;; if player lost increase penalty
-        (* (- result) 10)))))
+      ;; if player lost increase penalty
+      (* (- result) 10)
+        (- result)))))
 
 
 (defun sim-default
