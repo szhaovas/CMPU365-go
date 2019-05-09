@@ -20,4 +20,8 @@
                  (when (compete-mcrave-benchmark 1000 k)
                    (incf wins)))
         (push (/ wins match-number) win-rates)))
-    (reverse win-rates)))
+    (with-open-file (str "k-test.txt"
+                         :direction :output
+                         :if-exists :supersede
+                         :if-does-not-exist :create)
+      (format str "~A" (reverse win-rates)))))
