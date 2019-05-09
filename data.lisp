@@ -13,10 +13,12 @@
     ((k-values (list-gen step))
      (win-rates nil))
     (while k-values
+      (format t "~A~%" k-values)
       (let
         ((k (pop k-values))
          (wins 0))
         (dotimes (i match-number)
+                 (format t "match~A~%" i)
                  (when (compete-mcrave-benchmark 1000 k)
                    (incf wins)))
         (push (/ wins match-number) win-rates)))
