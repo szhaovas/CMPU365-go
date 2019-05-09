@@ -268,7 +268,7 @@
       ;; accumulator
       simtree-moves)
      (format t "current acc ~A~%" simtree-moves))
-    (setf move-acc (append (reverse simtree-moves) move-acc))))
+    (append (reverse simtree-moves) move-acc)))
 
 (defun sublist-member
   (item listy till)
@@ -295,7 +295,7 @@
 
 (defun backup
   (hashy key-move-acc move-acc)
-  (merge-moves key-move-acc move-acc hashy)
+  (setf move-acc (merge-moves key-move-acc move-acc hashy))
   (let ((result (first (last move-acc))))
     (while key-move-acc
       (let*
