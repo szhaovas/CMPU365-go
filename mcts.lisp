@@ -399,7 +399,7 @@
 (defun compete
     (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* t)
-  (let ((g (new-gomoku 9 5)))
+  (let ((g (new-gomoku 3 3)))
     (while (not (game-over? g))
       (cond
        ((eq (gomoku-whose-turn g) *black*)
@@ -419,7 +419,7 @@
 (defun compete-no-printing
     (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* nil)
-  (let ((g (new-gomoku 9 5)))
+  (let ((g (new-gomoku 3 3)))
     (while (not (game-over? g))
       (cond
        ((eq (gomoku-whose-turn g) *black*)
