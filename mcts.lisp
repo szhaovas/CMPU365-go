@@ -233,7 +233,7 @@
       (let ((move (random-move game)))
         (apply #'do-move! game move)
         (push move move-acc)))
-    (push (eval-func game) move-acc)
+    (push (who-wins? game) move-acc)
     (reverse move-acc)))
 
 ;;  BACKUP
@@ -252,11 +252,6 @@
     ((simtree-moves nil))
     (dotimes
      (i (/ (length key-move-acc) 2))
-     (format t "~A~%" key-move-acc)
-     (format t "~A~%" (length key-move-acc))
-     (format t "~A~%" (/ (length key-move-acc) 2))
-     (format t "current i ~A~%" i)
-     (format t "current acc ~A~%" simtree-moves)
      (push
       ;; move
       (svref
@@ -312,8 +307,6 @@
          (amaf-visits (mc-node-amaf-visits nodey))
          (amaf-scores (mc-node-amaf-scores nodey)))
         ;; increment MC stats
-        (format t "~A~%" key-move-acc)
-        (format t "~A~%" move-acc)
         (incf (mc-node-num-visits nodey))
         (incf (svref mc-visits mv-index))
         (incf (svref mc-scores mv-index)
