@@ -331,9 +331,9 @@
                ;; is move_i legal at current state?
                (legal-p (array-member mv veck-moves))
                (repeat (sublist-member mv move-acc i)))
-              (format t "move ~A" mv)
-              (format t "check legal ~A" legal-p)
-              (format t "check repeat ~A" repeat)
+              (format t "move ~A~%" mv)
+              (format t "check legal ~A~%" legal-p)
+              (format t "check repeat ~A~%" repeat)
               (when
                 (and
                  ;; move-i is legal at current state
