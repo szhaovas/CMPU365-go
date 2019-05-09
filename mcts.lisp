@@ -304,6 +304,8 @@
 (defun backup
   (hashy key-move-acc move-acc)
   (setf move-acc (merge-moves key-move-acc move-acc hashy))
+  (format t "~A~%" key-move-acc)
+  (format t "~A~%" move-acc)
   (let ((result (first (last move-acc))))
     (while key-move-acc
       (let*
