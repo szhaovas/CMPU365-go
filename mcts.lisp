@@ -379,6 +379,7 @@
       (format t ".")
       (when *verbose*
        	;; Display some stats along with the best move
+        (format t "move veck: ~A~%" (mc-node-veck-moves rootie))
        	(format t "Best score: ~5,3F score veck: " score)
        	(dotimes (i (length scores))
               	  (format t "~5,3F, " (svref scores i)))
