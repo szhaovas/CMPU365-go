@@ -307,6 +307,7 @@
          (amaf-visits (mc-node-amaf-visits nodey))
          (amaf-scores (mc-node-amaf-scores nodey)))
         ;; increment MC stats
+        (format t "~A~%" result)
         (format t "~A~%" (last move-acc))
         (incf (mc-node-num-visits nodey))
         (incf (svref mc-visits mv-index))
