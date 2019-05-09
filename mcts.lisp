@@ -226,6 +226,15 @@
 ;;  OUTPUT:  The result of following the game's default policy
 ;;             (domain-dependent method)
 
+
+(defun result-wrapper
+  (game)
+  (let ((result (who-wins? game)))
+    (if (eq result *draw*)
+      0
+      result)))
+
+
 (defun sim-default
   (game)
   (let ((move-acc nil))
@@ -233,7 +242,7 @@
       (let ((move (random-move game)))
         (apply #'do-move! game move)
         (push move move-acc)))
-    (push (who-wins? game) move-acc)
+    (push (result-wrapper game) move-acc)
     (reverse move-acc)))
 
 ;;  BACKUP
@@ -296,7 +305,6 @@
   (hashy key-move-acc move-acc)
   (setf move-acc (merge-moves key-move-acc move-acc hashy))
   (let ((result (first (last move-acc))))
-    (format t "result: ~A~%" result)
     (while key-move-acc
       (let*
         ((key (pop key-move-acc))
