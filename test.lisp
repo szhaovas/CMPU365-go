@@ -91,3 +91,33 @@
         	(format t "YOUR TURN! enter your move:~%")
         	(format t "~A~%"
                		(apply #'do-move! g (read))))))))
+
+(defun compete-i-uctrave
+  (black-num-sims black-k black-c)
+  (setf *verbose* t)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(format t "BLACK'S TURN!~%")
+        	(format t "~A~%"
+               		(apply #'do-move! g (uct-rave g black-num-sims (* black-num-sims black-k) black-c))))
+        (t
+        	(format t "YOUR TURN! enter your move:~%")
+        	(format t "~A~%"
+               		(apply #'do-move! g (read))))))))
+
+(defun compete-mcuct
+  (black-num-sims black-c white-num-sims white-c)
+  (setf *verbose* t)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(format t "BLACK'S TURN!~%")
+        	(format t "~A~%"
+               		(apply #'do-move! g (uct-search g black-num-sims black-c))))
+        (t
+        	(format t "WHITE'S TURN!~%")
+        	(format t "~A~%"
+               		(apply #'do-move! g (uct-search g white-num-sims white-c))))))))
