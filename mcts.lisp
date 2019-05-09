@@ -277,7 +277,7 @@
 (defparameter *verbose* t) ;; a global parameter used to ensure/suppress printing of stats
 
 (defun uct-search
-    (orig-game num-sims c)
+    (orig-game num-sims c orig-game)
   ;; Want to use COPY of GAME struct for simulations...
   ;; That way, can reset game struct before each simulation...
   (let* ((tree (new-uct-tree orig-game))
@@ -290,7 +290,7 @@
 	     ;; Phase 1:  sim-tree-uct Destructively modifies game
 	     (key-move-acc (sim-tree-uct game tree c))
 	     ;; Phase 2:  sim-default-uct returns result
-	     (playout-result (sim-default-uct game)))
+	     (playout-result (sim-default-uct game orig-game)))
 	;; Finally, backup-uct the results
 	(backup-uct hashy key-move-acc playout-result)))
     ;; Select the best move (using c = 0 because we are not exploring anymore)
