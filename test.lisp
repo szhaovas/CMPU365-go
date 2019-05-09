@@ -121,3 +121,27 @@
         	(format t "WHITE'S TURN!~%")
         	(format t "~A~%"
                		(apply #'do-move! g (uct-search g white-num-sims white-c))))))))
+
+(defun compete-mcrave-benchmark
+  (black-num-sims black-k)
+  (setf *verbose* nil)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(apply #'do-move! g (mc-rave g black-num-sims (* black-num-sims black-k))))
+        (t
+        	(apply #'do-move! g (mc-rave g 1000 0.5)))))
+    (eq (who-wins? g) *black*)))
+
+(defun compete-uctrave-benchmark
+  (black-num-sims black-k black-c)
+  (setf *verbose* nil)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(apply #'do-move! g (uct-rave g black-num-sims (* black-num-sims black-k) black-c)))
+        (t
+        	(apply #'do-move! g (mc-rave g 1000 0.5)))))
+    (eq (who-wins? g) *black*)))

@@ -33,4 +33,6 @@
   (compile-file "mc-rave")
   (load "mc-rave")
   (compile-file "test")
-  (load "test"))
+  (load "test")
+  (compile-file "data")
+  (load "data"))
