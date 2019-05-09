@@ -267,7 +267,8 @@
        ;; move-index
        (nth (+ (* i 2) 1) key-move-acc))
       ;; accumulator
-      simtree-moves))
+      simtree-moves)
+     (format t "current acc ~A~%" simtree-moves))
     (append (reverse simtree-moves) move-acc)))
 
 (defun sublist-member
