@@ -304,8 +304,6 @@
 (defun backup
   (hashy key-move-acc move-acc)
   (setf move-acc (merge-moves key-move-acc move-acc hashy))
-  (format t "~A~%" key-move-acc)
-  (format t "~A~%" move-acc)
   (let ((result (first (last move-acc))))
     (while key-move-acc
       (let*
@@ -317,6 +315,8 @@
          (mc-scores (mc-node-veck-scores nodey))
          (amaf-visits (mc-node-amaf-visits nodey))
          (amaf-scores (mc-node-amaf-scores nodey)))
+        (format t "~A~%" key-move-acc)
+        (format t "~A~%" move-acc)
         ;; increment MC stats
         (incf (mc-node-num-visits nodey))
         (incf (svref mc-visits mv-index))
@@ -329,13 +329,17 @@
             (let*
               ((mv (nth i move-acc))
                ;; is move_i legal at current state?
-               (legal-p (array-member mv veck-moves)))
+               (legal-p (array-member mv veck-moves))
+               (repeat (sublist-member mv move-acc i)))
+              (format t "move ~A" mv)
+              (format t "check legal ~A" legal-p)
+              (format t "check repeat ~A" repeat)
               (when
                 (and
                  ;; move-i is legal at current state
                  legal-p
                  ;; move_i is not within the seen moves
-                 (not (sublist-member mv move-acc i)))
+                 (not repeat))
                 ;; updates AMAF
                 (incf (svref amaf-visits legal-p))
                 (incf (svref amaf-scores legal-p)
