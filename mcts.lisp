@@ -267,19 +267,7 @@
        (nth (+ (* i 2) 1) key-move-acc))
       ;; accumulator
       simtree-moves)
-     (format t "pushed ~A~%" 
-             ;; move
-             (svref
-              ;; vector of moves
-              (mc-node-veck-moves
-               ;; node
-               (gethash
-                ;; key
-                (nth (* i 2) key-move-acc)
-                ;; tree (hash table)
-                hashy))
-              ;; move-index
-              (nth (+ (* i 2) 1) key-move-acc))))
+     (format t "current acc ~A~%" simtree-moves))
     (setf move-acc (append (reverse simtree-moves) move-acc))))
 
 (defun sublist-member
