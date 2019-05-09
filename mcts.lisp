@@ -321,8 +321,8 @@
     (if (eq result *draw*)
       0
       (if (eq result (gomoku-whose-turn orig-game))
-        (- result)
-        (* (- result) 2)))))
+        (* (- result) 2)
+        (- result)))))
 
 
 (defun sim-default
