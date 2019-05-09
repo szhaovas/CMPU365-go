@@ -278,17 +278,17 @@
       simtree-moves))
     (append (reverse simtree-moves) move-acc)))
 
-(defun sublist-member
-  (item listy till)
-  (let ((i 0))
-    (while (<= i (- till 2))
-      (when
-        (equal
-         item
-         (nth i listy))
-        (return-from sublist-member t))
-      (incf i 2))
-    nil))
+; (defun sublist-member
+;   (item listy till)
+;   (let ((i 0))
+;     (while (<= i (- till 2))
+;       (when
+;         (equal
+;          item
+;          (nth i listy))
+;         (return-from sublist-member t))
+;       (incf i 2))
+;     nil))
 
 (defun array-member
   (item arr)
@@ -315,9 +315,9 @@
          (mc-scores (mc-node-veck-scores nodey))
          (amaf-visits (mc-node-amaf-visits nodey))
          (amaf-scores (mc-node-amaf-scores nodey)))
-        (format t "~A~%" key-move-acc)
-        (format t "~A~%" move-acc)
-        (format t "~A~%" veck-moves)
+        ; (format t "~A~%" key-move-acc)
+        ; (format t "~A~%" move-acc)
+        ; (format t "~A~%" veck-moves)
         ;; increment MC stats
         (incf (mc-node-num-visits nodey))
         (incf (svref mc-visits mv-index))
@@ -330,22 +330,19 @@
             (let*
               ((mv (nth i move-acc))
                ;; is move_i legal at current state?
-               (legal-p (array-member mv veck-moves))
-               (repeat (sublist-member mv move-acc i)))
-              (format t "move ~A~%" mv)
-              (format t "check legal ~A~%" legal-p)
-              (format t "check repeat ~A~%" repeat)
+               (legal-p (array-member mv veck-moves)))
+              ; (format t "move ~A~%" mv)
+              ; (format t "check legal ~A~%" legal-p)
               (when
-                (and
-                 ;; move-i is legal at current state
-                 legal-p
-                 ;; move_i is not within the seen moves
-                 (not repeat))
+                ;; move-i is legal at current state
+                legal-p
                 ;; updates AMAF
                 (incf (svref amaf-visits legal-p))
                 (incf (svref amaf-scores legal-p)
                  	    (/ (- result (svref amaf-scores legal-p))
-                 	       (svref amaf-visits legal-p)))))
+                 	       (svref amaf-visits legal-p))))
+              ;(format t "amaf score ~A~%" (svref amaf-visits legal-p))
+              )
             (incf i 2))
           (setf move-acc (rest move-acc)))))))
 
@@ -382,7 +379,8 @@
        	   (mv-index (select-move rootie k))
        	   (move (svref (mc-node-veck-moves rootie) mv-index))
        	   (scores (mc-node-veck-scores rootie))
-       	   (score (svref scores mv-index)))
+       	   (score (svref scores mv-index))
+           (amaf-visits (mc-node-amaf-visits rootie)))
       (format t ".")
       (when *verbose*
        	;; Display some stats along with the best move
@@ -394,6 +392,8 @@
        	(format t "Visits veck: ")
        	(dotimes (i (length scores))
               	  (format t "~A " (svref (mc-node-veck-visits rootie) i)))
+        (format t "~%")
+        (format t "AMAF Visits veck: ~A" amaf-visits)
        	(format t "~%"))
       ;; Output the move
       move)))
