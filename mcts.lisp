@@ -175,6 +175,58 @@
            best-move-so-far
            (random num-moves)))))))
 
+(defun select-move-uct
+  (nodey k c)
+  (let*
+    ((player (mc-node-whose-turn nodey))
+   	 (moves (mc-node-veck-moves nodey))
+   	 (num-moves (length moves)))
+    (cond
+      ;; No legal moves!
+      ((= num-moves 0)
+       ;; signal failure
+       nil)
+      ;; Only one legal move
+      ((= num-moves 1)
+       ;; return it
+       0)
+      ;; Two or more moves
+      (t
+       (let*
+         ((n (mc-node-num-visits nodey))
+          (beta (sqrt (/ k (+ (* n 3) k))))
+          (mc-scoress (mc-node-veck-scores nodey))
+          (amaf-scoress (mc-node-amaf-scores nodey))
+     	    (best-move-so-far nil)
+     	    (best-score-so-far (if (eq player *black*)
+                               *neg-inf*
+                               *pos-inf*)))
+         (dotimes
+          (i num-moves)
+     	    ;; Fetch weighted score for this move
+     	    (let*
+            ((mc-score (svref mc-scoress i))
+             (amaf-score (svref amaf-scoress i))
+             (weighted-score (+ (* (- 1 beta) mc-score) (* beta amaf-score)))
+             (uct-score (+ weighted-score (* c (sqrt (/ (log n)
+                                                        (svref (mc-node-veck-visits nodey) i)))))))
+     	      ;; When SCORE is better than best-score-so-far...
+     	      (when
+              (or
+               (and
+                (eq player *black*)
+                (> uct-score best-score-so-far))
+               (and
+                (eq player *white*)
+                (< uct-score best-score-so-far)))
+              ;; Update best-score/move-so-far
+              (setf best-score-so-far uct-score)
+              (setf best-move-so-far i))))
+        	;; Return best-move-so-far or (if NIL) a random move
+         (if best-move-so-far
+           best-move-so-far
+           (random num-moves)))))))
+
 
 ;;  SIM-TREE
 ;; --------------------------------------
@@ -211,6 +263,41 @@
 
        	;; Case 2:  Key already in tree!
        	(let* ((mv-index (select-move nodey k))
+       	       (move-veck (mc-node-veck-moves nodey))
+       	       (move (svref move-veck mv-index)))
+       	  (apply #'do-move! game move)
+       	  (push key key-move-acc)
+       	  (push mv-index key-move-acc))))
+
+    ;; After the WHILE... return the accumulated key/move list
+    (reverse key-move-acc)))
+
+(defun sim-tree-uct
+  (game tree k c)
+  (let (;; KEY-MOVE-ACC:  accumulator of KEYs and MOVEs
+       	(key-move-acc nil)
+       	(hashy (mc-tree-hashy tree)))
+    (while (not (game-over? game))
+      (let* (;; KEY:  Hash key for current state of game
+       	     (key (make-hash-key-from-game game))
+       	     ;; NODEY:  The MC-NODE corresponding to KEY (or NIL if not in tree)
+       	     (nodey (gethash key hashy)))
+       	;; Case 1:  When key not yet in tree...
+       	(when (null nodey)
+       	  ;; Create new node and insert it into tree
+       	  (setf nodey (insert-new-node game tree key))
+       	  (let* ((mv-index (select-move-uct nodey k c))
+                 (move-veck (mc-node-veck-moves nodey))
+                 (move (svref move-veck mv-index)))
+       	    (apply #'do-move! game move)
+       	    (push key key-move-acc)
+       	    (push mv-index key-move-acc)
+       	    ;; return the accumulator prepended with selected MOVE
+       	    ;; and KEY for current state
+       	    (return-from sim-tree (reverse key-move-acc))))
+
+       	;; Case 2:  Key already in tree!
+       	(let* ((mv-index (select-move-uct nodey k c))
        	       (move-veck (mc-node-veck-moves nodey))
        	       (move (svref move-veck mv-index)))
        	  (apply #'do-move! game move)
@@ -400,6 +487,50 @@
       ;; Output the move
       move)))
 
+(defun uct-rave
+  (orig-game num-sims k c)
+  ;; Want to use COPY of GAME struct for simulations...
+  ;; That way, can reset game struct before each simulation...
+  (let* ((tree (new-mc-tree orig-game))
+       	 (hashy (mc-tree-hashy tree))
+       	 ;;(player (whose-turn orig-game))
+       	 )
+    (dotimes (i num-sims)
+             (let* (;; Work with a COPY of the original game struct
+              	     (game (copy-game orig-game))
+              	     ;; Phase 1:  SIM-TREE Destructively modifies game
+              	     (key-move-acc (sim-tree-uct game tree k c))
+              	     ;; Phase 2:  SIM-DEFAULT returns result
+              	     (move-acc (sim-default game)))
+              	;; Finally, backup the results
+               ;(format t "--------------------------------------backup~A~%" i)
+              	(backup hashy key-move-acc move-acc)))
+    ;; Select the best move (using c = 0 because we are not exploring anymore)
+    (let* ((rootie (get-root-node tree))
+       	   (mv-index (select-move-uct rootie k c))
+       	   (move (svref (mc-node-veck-moves rootie) mv-index))
+       	   (scores (mc-node-veck-scores rootie))
+       	   (score (svref scores mv-index))
+           (amaf-visits (mc-node-amaf-visits rootie))
+           (amaf-scores (mc-node-amaf-scores rootie)))
+      (format t ".")
+      (when *verbose*
+       	;; Display some stats along with the best move
+        (format t "moves veck: ~A~%" (mc-node-veck-moves rootie))
+       	(format t "mc-scores veck: ")
+       	(dotimes (i (length scores))
+                	(format t "~5,3F, " (svref scores i)))
+       	(format t "~%")
+       	(format t "mc-visits veck: ")
+       	(dotimes (i (length scores))
+              	  (format t "~A " (svref (mc-node-veck-visits rootie) i)))
+        (format t "~%")
+        (format t "AMAF Visits veck: ~A" amaf-visits)
+       	(format t "~%")
+        (format t "AMAF Scores veck ~A~%" amaf-scores))
+      ;; Output the move
+      move)))
+
 ;;  COMPETE
 ;; --------------------------------------------------
 ;;  INPUTS:  BLACK-NUM-SIMS, the number of simulations for each of black's moves
@@ -425,11 +556,26 @@
        ((eq (gomoku-whose-turn g) *black*)
 	(format t "BLACK'S TURN!~%")
 	(format t "~A~%"
-		(apply #'do-move! g (mc-rave g black-num-sims black-k))))
+		(apply #'do-move! g (mc-rave g black-num-sims (* black-num-sims black-k)))))
        (t
 	(format t "WHITE'S TURN!~%")
 	(format t "~A~%"
-		(apply #'do-move! g (mc-rave g white-num-sims white-k))))))))
+		(apply #'do-move! g (mc-rave g white-num-sims (* white-num-sims white-k)))))))))
+
+(defun compete-uct
+  (black-num-sims black-k black-c white-num-sims white-k white-c)
+  (setf *verbose* t)
+  (let ((g (new-gomoku 3 3)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(format t "BLACK'S TURN!~%")
+        	(format t "~A~%"
+               		(apply #'do-move! g (uct-rave g black-num-sims (* black-num-sims black-k) black-c))))
+        (t
+        	(format t "WHITE'S TURN!~%")
+        	(format t "~A~%"
+               		(apply #'do-move! g (uct-rave g white-num-sims (* white-num-sims white-k) white-c))))))))
 
 
 ;;  COMPETE-NO-PRINTING
@@ -444,8 +590,22 @@
       (cond
        ((eq (gomoku-whose-turn g) *black*)
 	(format t "B ")
-	(apply #'do-move! g (mc-rave g black-num-sims black-k)))
+	(apply #'do-move! g (mc-rave g black-num-sims (* black-num-sims black-k))))
        (t
 	(format t "W ")
-	(apply #'do-move! g (mc-rave g white-num-sims white-k)))))
+	(apply #'do-move! g (mc-rave g white-num-sims (* white-num-sims white-k))))))
+    (format t "~%~A~%" g)))
+
+(defun compete-uct-no-printing
+  (black-num-sims black-k black-c white-num-sims white-k white-c)
+  (setf *verbose* nil)
+  (let ((g (new-gomoku 3 3)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(format t "B ")
+        	(apply #'do-move! g (uct-rave g black-num-sims (* black-num-sims black-k) black-c)))
+        (t
+        	(format t "W ")
+        	(apply #'do-move! g (uct-rave g white-num-sims (* white-num-sims white-k) white-c)))))
     (format t "~%~A~%" g)))
