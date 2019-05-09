@@ -320,7 +320,7 @@
   (let ((result (who-wins? game)))
     (if (eq result *draw*)
       0
-      -result)))
+      (- result))))
 
 
 (defun sim-default
