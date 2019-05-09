@@ -201,6 +201,7 @@
      	    (best-score-so-far (if (eq player *black*)
                                *neg-inf*
                                *pos-inf*)))
+         (when (zerop 0) (return-from select-move-uct (random num-moves)))
          (dotimes
           (i num-moves)
      	    ;; Fetch weighted score for this move
