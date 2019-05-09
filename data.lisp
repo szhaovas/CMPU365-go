@@ -1,6 +1,6 @@
 (defun list-gen
   (step)
-  (let ((counter 0)
+  (let ((counter 0.0000001)
         (result nil))
     (while (<= counter 1)
       (push counter result)
