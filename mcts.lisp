@@ -296,6 +296,7 @@
   (hashy key-move-acc move-acc)
   (setf move-acc (merge-moves key-move-acc move-acc hashy))
   (let ((result (first (last move-acc))))
+    (format t "result: ~A~%" result)
     (while key-move-acc
       (let*
         ((key (pop key-move-acc))
@@ -359,7 +360,7 @@
               	     ;; Phase 2:  SIM-DEFAULT returns result
               	     (move-acc (sim-default game)))
               	;; Finally, backup the results
-               (format t "--------------------------------------backup~A~%" i)
+               ;;(format t "--------------------------------------backup~A~%" i)
               	(backup hashy key-move-acc move-acc)))
     ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
