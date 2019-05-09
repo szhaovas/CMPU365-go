@@ -317,6 +317,7 @@
          (amaf-scores (mc-node-amaf-scores nodey)))
         (format t "~A~%" key-move-acc)
         (format t "~A~%" move-acc)
+        (format t "~A~%" veck-moves)
         ;; increment MC stats
         (incf (mc-node-num-visits nodey))
         (incf (svref mc-visits mv-index))
