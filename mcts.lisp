@@ -9,11 +9,11 @@
 ;;     get-root-node-uct
 ;;     NEW-uct-tree
 ;;     insert-new-node-uct
-;;     sim-tree-uct
+;;     sim-tree-mcuct
 ;;     sim-default-uct
 ;;     backup-uct
 ;;     UCT-SEARCH
-;;     select-move-uct
+;;     select-move-mcuct
 
 ;;  In addition, for testing, defines:  COMPETE
 
@@ -115,13 +115,13 @@
     ;; return the node
     nodey))
 
-;;  select-move-uct
+;;  select-move-mcuct
 ;; ------------------------------------------
 ;;  INPUTS:  NODEY, an uct-node struct
 ;;           C, exploitation-exploration constant
 ;;  OUTPUT:  The INDEX of the selected move into the moves vector
 
-(defun select-move-uct
+(defun select-move-mcuct
     (nodey c)
   (let* ((player (uct-node-whose-turn nodey))
 	 (moves (uct-node-veck-moves nodey))
@@ -154,7 +154,7 @@
 	  ;; Then we want to select it immediately!
 	  (when (and (> c 0)
 		     (= (svref move-visits i) 0))
-	    (return-from select-move-uct i))
+	    (return-from select-move-mcuct i))
 	  ;; When c=0 and this move has not yet been visited
 	  ;; Ignore this move!  (I.e., only proceed if it *has*
 	  ;; been visited at least once.)
@@ -182,7 +182,7 @@
 	  (random num-moves)))))))
 
 
-;;  sim-tree-uct
+;;  sim-tree-mcuct
 ;; --------------------------------------
 ;;  INPUTS:  GAME, a game struct
 ;;           TREE, an uct-tree struct
@@ -191,7 +191,7 @@
 ;;    where each state_i is a key into the hashtable, and each move_i
 ;;    is an index into the MOVES vector of the node assoc with state_i.
 
-(defun sim-tree-uct
+(defun sim-tree-mcuct
     (game tree c)
   (let (;; KEY-MOVE-ACC:  accumulator of KEYs and MOVEs
 	(key-move-acc nil)
@@ -205,7 +205,7 @@
 	(when (null nodey)
 	  ;; Create new node and insert it into tree
 	  (setf nodey (insert-new-node-uct game tree key))
-	  (let* ((mv-index (select-move-uct nodey c))
+	  (let* ((mv-index (select-move-mcuct nodey c))
 		 (move-veck (uct-node-veck-moves nodey))
 		 (move (svref move-veck mv-index)))
 	    (apply #'do-move! game nil move)
@@ -213,10 +213,10 @@
 	    (push mv-index key-move-acc)
 	    ;; return the accumulator prepended with selected MOVE
 	    ;; and KEY for current state
-	    (return-from sim-tree-uct (reverse key-move-acc))))
+	    (return-from sim-tree-mcuct (reverse key-move-acc))))
 
 	;; Case 2:  Key already in tree!
-	(let* ((mv-index (select-move-uct nodey c))
+	(let* ((mv-index (select-move-mcuct nodey c))
 	       (move-veck (uct-node-veck-moves nodey))
 	       (move (svref move-veck mv-index)))
 	  (apply #'do-move! game nil move)
@@ -274,10 +274,8 @@
 ;;  OUTPUT:  Best move from that state determined by
 ;;             doing *NUM-SIMS* simulations of MCTS.
 
-(defparameter *verbose* t) ;; a global parameter used to ensure/suppress printing of stats
-
 (defun uct-search
-    (orig-game num-sims c orig-game)
+    (orig-game num-sims c)
   ;; Want to use COPY of GAME struct for simulations...
   ;; That way, can reset game struct before each simulation...
   (let* ((tree (new-uct-tree orig-game))
@@ -287,15 +285,15 @@
     (dotimes (i num-sims)
       (let* (;; Work with a COPY of the original game struct
 	     (game (copy-game orig-game))
-	     ;; Phase 1:  sim-tree-uct Destructively modifies game
-	     (key-move-acc (sim-tree-uct game tree c))
+	     ;; Phase 1:  sim-tree-mcuct Destructively modifies game
+	     (key-move-acc (sim-tree-mcuct game tree c))
 	     ;; Phase 2:  sim-default-uct returns result
 	     (playout-result (sim-default-uct game orig-game)))
 	;; Finally, backup-uct the results
 	(backup-uct hashy key-move-acc playout-result)))
     ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node-uct tree))
-	   (mv-index (select-move-uct rootie 0))
+	   (mv-index (select-move-mcuct rootie 0))
 	   (move (svref (uct-node-veck-moves rootie) mv-index))
 	   (scores (uct-node-veck-scores rootie))
 	   (score (svref scores mv-index)))
