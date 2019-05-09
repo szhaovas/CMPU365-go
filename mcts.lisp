@@ -252,6 +252,7 @@
     ((simtree-moves nil))
     (dotimes
      (i (/ (length key-move-acc) 2))
+     (format t "current acc ~A~%" simtree-moves)
      (push
       ;; move
       (svref
@@ -266,8 +267,7 @@
        ;; move-index
        (nth (+ (* i 2) 1) key-move-acc))
       ;; accumulator
-      simtree-moves)
-     (format t "current acc ~A~%" simtree-moves))
+      simtree-moves))
     (append (reverse simtree-moves) move-acc)))
 
 (defun sublist-member
