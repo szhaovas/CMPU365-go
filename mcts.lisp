@@ -307,9 +307,9 @@
          (amaf-visits (mc-node-amaf-visits nodey))
          (amaf-scores (mc-node-amaf-scores nodey)))
         ;; increment MC stats
-        (format t "~A~%" result)
-        (format t "~A~%" key-move-acc)
-        (format t "~A~%" move-acc)
+        ;;(format t "~A~%" result)
+        ;;(format t "~A~%" key-move-acc)
+        ;;(format t "~A~%" move-acc)
         (incf (mc-node-num-visits nodey))
         (incf (svref mc-visits mv-index))
         (incf (svref mc-scores mv-index)
@@ -362,7 +362,7 @@
               	     ;; Phase 2:  SIM-DEFAULT returns result
               	     (move-acc (sim-default game)))
               	;; Finally, backup the results
-               (format t "--------------------------------------backup~A~%" i)
+               ;;(format t "--------------------------------------backup~A~%" i)
               	(backup hashy key-move-acc move-acc)))
     ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
@@ -403,7 +403,7 @@
 (defun compete
     (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* t)
-  (let ((g (new-gomoku 3 3)))
+  (let ((g (new-gomoku 9 3)))
     (while (not (game-over? g))
       (cond
        ((eq (gomoku-whose-turn g) *black*)
@@ -423,7 +423,7 @@
 (defun compete-no-printing
     (black-num-sims black-k white-num-sims white-k)
   (setf *verbose* nil)
-  (let ((g (new-gomoku 3 3)))
+  (let ((g (new-gomoku 9 3)))
     (while (not (game-over? g))
       (cond
        ((eq (gomoku-whose-turn g) *black*)
