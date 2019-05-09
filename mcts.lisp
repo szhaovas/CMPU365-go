@@ -252,23 +252,34 @@
     ((simtree-moves nil))
     (dotimes
      (i (/ (length key-move-acc) 2))
-     (let ((mv ;; move
-               (svref
-                ;; vector of moves
-                (mc-node-veck-moves
-                 ;; node
-                 (gethash
-                  ;; key
-                  (nth (* i 2) key-move-acc)
-                  ;; tree (hash table)
-                  hashy))
-                ;; move-index
-                (nth (+ (* i 2) 1) key-move-acc))))
      (push
-      mv
+      ;; move
+      (svref
+       ;; vector of moves
+       (mc-node-veck-moves
+        ;; node
+        (gethash
+         ;; key
+         (nth (* i 2) key-move-acc)
+         ;; tree (hash table)
+         hashy))
+       ;; move-index
+       (nth (+ (* i 2) 1) key-move-acc))
       ;; accumulator
-      simtree-moves))
-     (format t "~A pushed onto move-acc~%" mv))
+      simtree-moves)
+     (format t "pushed ~A~%" 
+             ;; move
+             (svref
+              ;; vector of moves
+              (mc-node-veck-moves
+               ;; node
+               (gethash
+                ;; key
+                (nth (* i 2) key-move-acc)
+                ;; tree (hash table)
+                hashy))
+              ;; move-index
+              (nth (+ (* i 2) 1) key-move-acc))))
     (setf move-acc (append (reverse simtree-moves) move-acc))))
 
 (defun sublist-member
