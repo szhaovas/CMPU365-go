@@ -294,7 +294,7 @@
        	    (push mv-index key-move-acc)
        	    ;; return the accumulator prepended with selected MOVE
        	    ;; and KEY for current state
-       	    (return-from sim-tree (reverse key-move-acc))))
+       	    (return-from sim-tree-uct (reverse key-move-acc))))
 
        	;; Case 2:  Key already in tree!
        	(let* ((mv-index (select-move-uct nodey k c))
