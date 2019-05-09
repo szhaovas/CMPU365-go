@@ -252,6 +252,7 @@
     ((simtree-moves nil))
     (dotimes
      (i (/ (length key-move-acc) 2))
+     (format t "~A~%" (/ (length key-move-acc) 2))
      (format t "current i ~A~%" i)
      (format t "current acc ~A~%" simtree-moves)
      (push
