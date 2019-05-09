@@ -316,21 +316,23 @@
 
 
 (defun result-wrapper
-  (game)
+  (game orig-game)
   (let ((result (who-wins? game)))
     (if (eq result *draw*)
       0
-      (- result))))
+      (if (eq result (gomoku-whose-turn orig-game))
+        (- result)
+        (* (- result) 2)))))
 
 
 (defun sim-default
-  (game)
+  (game orig-game)
   (let ((move-acc nil))
     (while (not (game-over? game))
       (let ((move (random-move game)))
         (apply #'do-move! game move)
         (push move move-acc)))
-    (push (result-wrapper game) move-acc)
+    (push (result-wrapper game orig-game) move-acc)
     (reverse move-acc)))
 
 ;;  BACKUP
@@ -458,7 +460,7 @@
               	     ;; Phase 1:  SIM-TREE Destructively modifies game
               	     (key-move-acc (sim-tree game tree k))
               	     ;; Phase 2:  SIM-DEFAULT returns result
-              	     (move-acc (sim-default game)))
+              	     (move-acc (sim-default game orig-game)))
               	;; Finally, backup the results
                ;(format t "--------------------------------------backup~A~%" i)
               	(backup hashy key-move-acc move-acc)))
@@ -502,7 +504,7 @@
               	     ;; Phase 1:  SIM-TREE Destructively modifies game
               	     (key-move-acc (sim-tree-uct game tree k c))
               	     ;; Phase 2:  SIM-DEFAULT returns result
-              	     (move-acc (sim-default game)))
+              	     (move-acc (sim-default game orig-game)))
               	;; Finally, backup the results
                ;(format t "--------------------------------------backup~A~%" i)
               	(backup hashy key-move-acc move-acc)))
