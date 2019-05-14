@@ -142,7 +142,7 @@
   (setf *verbose* nil)
   (let ((g (new-gomoku 7 5)))
     (while (not (game-over? g))
-      (
+      (cond
         ((eq (gomoku-whose-turn g) *black*)
         	(apply #'do-move! g (mc-rave g black-num-sims (* black-num-sims black-k))))
         (t
