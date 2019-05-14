@@ -341,11 +341,9 @@
   (format t "sim-default-cutoff starts!")
   (let*
     ((move-acc nil)
-     (orig-num-total (+ (gomoku-black-pieces orig-game)
-                        (gomoku-white-pieces orig-game)))
-     (num-total (+ (gomoku-black-pieces game)
-                   (gomoku-white-pieces game)))
-     (current-depth (- num-total orig-num-total)))
+     (orig-num-open (gomoku-num-open orig-game))
+     (num-open (gomoku-num-open game))
+     (current-depth (- orig-num-open num-open)))
     (while (and
             (not (game-over? game))
             (< current-depth cutoff-depth))
