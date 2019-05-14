@@ -336,6 +336,26 @@
     (push (result-wrapper game orig-game) move-acc)
     (reverse move-acc)))
 
+(defun sim-default-cutoff
+  (game orig-game cutoff-depth)
+  (let*
+    ((move-acc nil)
+     (orig-num-total (+ (gomoku-black-pieces orig-game)
+                        (gomoku-white-pieces orig-game)))
+     (num-total (+ (gomoku-black-pieces game)
+                   (gomoku-white-pieces game)))
+     (current-depth (- num-total orig-num-total)))
+    (while (and
+            (not (game-over? game))
+            (< current-depth cutoff-depth))
+      (let ((move (random-move game)))
+        (apply #'do-move! game move)
+        (incf current-depth)
+        (push move move-acc)))
+    (push (eval-func game (gomoku-whose-turn game))
+          move-acc)
+    (reverse move-acc)))
+
 ;;  BACKUP
 ;; ---------------------------------------------------
 ;;  INPUTS:  HASHY, the hash-table for the MCTS
@@ -513,6 +533,50 @@
     ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
        	   (mv-index (select-move-uct rootie k c))
+       	   (move (svref (mc-node-veck-moves rootie) mv-index))
+       	   (scores (mc-node-veck-scores rootie))
+           (amaf-visits (mc-node-amaf-visits rootie))
+           (amaf-scores (mc-node-amaf-scores rootie)))
+      (format t ".")
+      (when *verbose*
+       	;; Display some stats along with the best move
+        (format t "moves veck: ~A~%" (mc-node-veck-moves rootie))
+       	(format t "mc-scores veck: ")
+       	(dotimes (i (length scores))
+                	(format t "~5,3F, " (svref scores i)))
+       	(format t "~%")
+       	(format t "mc-visits veck: ")
+       	(dotimes (i (length scores))
+              	  (format t "~A " (svref (mc-node-veck-visits rootie) i)))
+        (format t "~%")
+        (format t "AMAF Visits veck: ~A" amaf-visits)
+       	(format t "~%")
+        (format t "AMAF Scores veck ~A~%" amaf-scores))
+      ;; Output the move
+      move)))
+
+(defun mc-rave-cutoff
+  (orig-game num-sims cutoff-depth k)
+  ;; Want to use COPY of GAME struct for simulations...
+  ;; That way, can reset game struct before each simulation...
+  (let* ((tree (new-mc-tree orig-game))
+       	 (hashy (mc-tree-hashy tree))
+       	 ;;(player (whose-turn orig-game))
+       	 (k k))
+    (when (zerop k) (setf k 0.0000001))
+    (dotimes (i num-sims)
+             (let* (;; Work with a COPY of the original game struct
+              	     (game (copy-game orig-game))
+              	     ;; Phase 1:  SIM-TREE Destructively modifies game
+              	     (key-move-acc (sim-tree game tree k))
+              	     ;; Phase 2:  SIM-DEFAULT returns result
+              	     (move-acc (sim-default-cutoff game orig-game cutoff-depth)))
+              	;; Finally, backup the results
+               ;(format t "--------------------------------------backup~A~%" i)
+              	(backup hashy key-move-acc move-acc)))
+    ;; Select the best move (using c = 0 because we are not exploring anymore)
+    (let* ((rootie (get-root-node tree))
+       	   (mv-index (select-move rootie k))
        	   (move (svref (mc-node-veck-moves rootie) mv-index))
        	   (scores (mc-node-veck-scores rootie))
            (amaf-visits (mc-node-amaf-visits rootie))
