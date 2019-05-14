@@ -454,7 +454,8 @@
   (let* ((tree (new-mc-tree orig-game))
        	 (hashy (mc-tree-hashy tree))
        	 ;;(player (whose-turn orig-game))
-       	 )
+       	 (k k))
+    (when (zerop k) (setf k 0.0000001))
     (dotimes (i num-sims)
              (let* (;; Work with a COPY of the original game struct
               	     (game (copy-game orig-game))
@@ -497,7 +498,8 @@
   (let* ((tree (new-mc-tree orig-game))
        	 (hashy (mc-tree-hashy tree))
        	 ;;(player (whose-turn orig-game))
-       	 )
+       	 (k k))
+    (when (zerop k) (setf k 0.0000001))
     (dotimes (i num-sims)
              (let* (;; Work with a COPY of the original game struct
               	     (game (copy-game orig-game))

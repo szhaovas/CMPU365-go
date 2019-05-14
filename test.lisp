@@ -142,12 +142,24 @@
   (setf *verbose* nil)
   (let ((g (new-gomoku 7 5)))
     (while (not (game-over? g))
-      (cond
+      (
         ((eq (gomoku-whose-turn g) *black*)
         	(apply #'do-move! g (mc-rave g black-num-sims (* black-num-sims black-k))))
         (t
-        	(apply #'do-move! g (mc-rave g 1000 0.5)))))
-    (eq (who-wins? g) *black*)))
+        	(apply #'do-move! g (compute-move g 1 *white*)))))
+    (who-wins? g)))
+
+(defun compete-benchmark-mcrave
+  (white-num-sims white-k)
+  (setf *verbose* nil)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(apply #'do-move! g (compute-move g 1 *black*)))
+        (t
+        	(apply #'do-move! g (mc-rave g white-num-sims (* white-num-sims white-k))))))
+    (who-wins? g)))
 
 (defun compete-uctrave-benchmark
   (black-num-sims black-k black-c)
@@ -158,5 +170,17 @@
         ((eq (gomoku-whose-turn g) *black*)
         	(apply #'do-move! g (uct-rave g black-num-sims (* black-num-sims black-k) black-c)))
         (t
-        	(apply #'do-move! g (mc-rave g 1000 0.5)))))
-    (eq (who-wins? g) *black*)))
+        	(apply #'do-move! g (compute-move g 1 *white*)))))
+    (who-wins? g)))
+
+(defun compete-benchmark-uctrave
+  (white-num-sims white-k white-c)
+  (setf *verbose* nil)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(apply #'do-move! g (compute-move g 1 *black*)))
+        (t
+        	(apply #'do-move! g (uct-rave g white-num-sims (* white-num-sims white-k) white-c)))))
+    (who-wins? g)))

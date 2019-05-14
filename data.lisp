@@ -1,3 +1,13 @@
+(defun normal-random (mean std-dev)
+  (do* ((rand-u (* 2 (- 0.5 (random 1.0))) (* 2 (- 0.5 (random 1.0))))
+        (rand-v (* 2 (- 0.5 (random 1.0))) (* 2 (- 0.5 (random 1.0))))
+        (rand-s (+ (* rand-u rand-u) (* rand-v rand-v))
+                (+ (* rand-u rand-u) (* rand-v rand-v))))
+    ((not (or (= 0 rand-s) (>= rand-s 1)))
+     (+ mean
+      (* std-dev
+        (* rand-u (sqrt (/ (* -2.0 (log rand-s)) rand-s))))))))
+
 (defun list-gen
   (step)
   (let ((counter 0)
@@ -17,7 +27,7 @@
          (wins 0))
         (when (zerop k) (setf k 0.0000001))
         (dotimes (i match-number)
-                 (when (compete-mcrave-benchmark 1000 k)
+                 (when (eq (compete-mcrave-benchmark 1000 k) *black*)
                    (incf wins)))
         (with-open-file (str "k-test.txt"
                              :direction :output
