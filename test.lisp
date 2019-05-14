@@ -137,6 +137,21 @@
         	(format t "~A~%"
                		(apply #'do-move! g (read))))))))
 
+(defun compete-mccutoff
+  (black-num-sims black-cutoff black-k white-num-sims white-cutoff white-k)
+  (setf *verbose* t)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(format t "BLACK'S TURN!~%")
+        	(format t "~A~%"
+               		(apply #'do-move! g (mc-rave-cutoff g black-num-sims black-cutoff (* black-num-sims black-k)))))
+        (t
+        	(format t "WHITE'S TURN!~%")
+        	(format t "~A~%"
+               		(apply #'do-move! g (mc-rave-cutoff g white-num-sims white-cutoff (* white-num-sims white-k)))))))))
+
 (defun compete-mcrave-benchmark
   (black-num-sims black-k)
   (setf *verbose* nil)
@@ -183,4 +198,28 @@
         	(apply #'do-move! g (compute-move g 1 *black*)))
         (t
         	(apply #'do-move! g (uct-rave g white-num-sims (* white-num-sims white-k) white-c)))))
+    (who-wins? g)))
+
+(defun compete-mcravecut-benchmark
+  (black-num-sims black-k cutoff-depth)
+  (setf *verbose* nil)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(apply #'do-move! g (mc-rave-cutoff g black-num-sims cutoff-depth (* black-num-sims black-k))))
+        (t
+        	(apply #'do-move! g (compute-move g 1 *white*)))))
+    (who-wins? g)))
+
+(defun compete-benchmark-mcravecut
+  (white-num-sims white-k cutoff-depth)
+  (setf *verbose* nil)
+  (let ((g (new-gomoku 7 5)))
+    (while (not (game-over? g))
+      (cond
+        ((eq (gomoku-whose-turn g) *black*)
+        	(apply #'do-move! g (compute-move g 1 *black*)))
+        (t
+        	(apply #'do-move! g (mc-rave-cutoff g white-num-sims cutoff-depth (* white-num-sims white-k))))))
     (who-wins? g)))
