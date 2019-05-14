@@ -25,7 +25,7 @@
     (dotimes (i 5)
              (case (compete-mcrave-benchmark 1000 k)
                (*black* (incf fitness))
-               (*white* (defc fitness))))
+               (*white* (decf fitness))))
     (dotimes (i 5)
              (case (compete-benchmark-mcrave 1000 k)
                (*white* (incf fitness))
