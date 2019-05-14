@@ -18,8 +18,6 @@
 
 (defun maker
   ()
-  (compile-file "basic-defns")
-  (load "basic-defns")
   (compile-file "gomoku")
   (load "gomoku")
   (compile-file "mcts")
