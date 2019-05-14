@@ -338,7 +338,7 @@
 
 (defun sim-default-cutoff
   (game orig-game cutoff-depth)
-  (format t "sim-default-cutoff starts!")
+  ;;(format t "sim-default-cutoff starts!")
   (let*
     ((move-acc nil)
      (orig-num-open (gomoku-num-open orig-game))
@@ -350,7 +350,7 @@
       (let ((move (random-move game)))
         (apply #'do-move! game move)
         (incf current-depth)
-        (format t "current-depth: ~A~%" current-depth)
+        ;;(format t "current-depth: ~A~%" current-depth)
         (push move move-acc)))
     (push (eval-func game (gomoku-whose-turn game))
           move-acc)
