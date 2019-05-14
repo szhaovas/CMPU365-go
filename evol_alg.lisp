@@ -23,11 +23,11 @@
   (let
     ((fitness 10))
     (dotimes (i 1)
-             (case (compete-mcrave-benchmark 1000 k)
+             (case (compete-mcrave-benchmark 100 k)
                (*black* (incf fitness))
                (*white* (decf fitness))))
     (dotimes (i 1)
-             (case (compete-benchmark-mcrave 1000 k)
+             (case (compete-benchmark-mcrave 100 k)
                (*white* (incf fitness))
                (*black* (decf fitness))))
     fitness))
