@@ -12,22 +12,16 @@
 
 (setf *global-gc-behavior* :auto)
 
-;;  The list of files for the OTHELLO implementation:
-
-(defparameter *gomoku-files*
-  (list
-   "basic-defns"
-   "gomoku"))
-
 ;;  MAKER
 ;; ------------------------------------
 ;;  Compiles and loads all files for the Othello/MCTS implementation
 
 (defun maker
   ()
-  (dolist (file *gomoku-files*)
-          (compile-file file)
-          (load file))
+  (compile-file "basic-defns")
+  (load "basic-defns")
+  (compile-file "gomoku")
+  (load "gomoku")
   (compile-file "mcts")
   (load "mcts")
   (compile-file "mc-rave")
