@@ -74,7 +74,7 @@
                                     :direction :output
                                     :if-exists :append
                                     :if-does-not-exist :create)
-                 (let
+                 (let*
                    ((all-fitness (compute-all-fitness current-ks))
                     (new-ks (reproduce current-ks all-fitness pop-size mut-sd)))
                    (format str "~A," i)
