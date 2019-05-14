@@ -32,6 +32,10 @@
                (*black* (decf fitness))))
     fitness))
 
+(defun compute-all-fitness
+  (ks)
+  (mapcar #'compute-fitness ks))
+
 (defun mutate
   (k mut-sd)
   (let
@@ -42,43 +46,39 @@
       (t result))))
 
 (defun reproduce
-  (ks pop-size mut-sd)
-  (with-open-file (str "evol-log.txt"
-                       :direction :output
-                       :if-exists :append
-                       :if-does-not-exist :create)
-    (let*
-      ((fitnesses (mapcar #'compute-fitness ks))
-       (total-fitness (apply #'+ fitnesses))
-       (scaled-fitnesses (mapcar #'(lambda (x)
-                                           (* (round (* (/ x total-fitness) pop-size)) 2))
-                                 fitnesses))
-       (sorted-indices (largest-number-index scaled-fitnesses))
-       (new-ks nil))
-      (while (< (length new-ks) pop-size)
-        (let*
-          ((max-ind (pop sorted-indices))
-           (num-children (nth max-ind scaled-fitnesses))
-           (k (nth max-ind ks)))
-          (dotimes (i num-children)
-                   (push (mutate k mut-sd) new-ks)
-                   (when (= (length new-ks) pop-size)
-                     (format str "~A," fitnesses)
-                     (format str "~A~%" new-ks)
-                     (return-from reproduce new-ks)))))
-      (format str "~A," fitnesses)
-      (format str "~A~%" new-ks)
-      new-ks)))
+  (ks all-fitness pop-size mut-sd)
+  (let*
+    ((total-fitness (apply #'+ all-fitness))
+     (scaled-fitnesses (mapcar #'(lambda (x)
+                                         (* (round (* (/ x total-fitness) pop-size)) 2))
+                               all-fitness))
+     (sorted-indices (largest-number-index scaled-fitnesses))
+     (new-ks nil))
+    (while (< (length new-ks) pop-size)
+      (let*
+        ((max-ind (pop sorted-indices))
+         (num-children (nth max-ind scaled-fitnesses))
+         (k (nth max-ind ks)))
+        (dotimes (i num-children)
+                 (push (mutate k mut-sd) new-ks)
+                 (when (= (length new-ks) pop-size)
+                   (return-from reproduce new-ks)))))
+    new-ks))
 
 (defun driver
   (num-gen pop-size mut-sd)
     (let
-      ((current-ks (list-gen (/ 1 pop-size))))
+      ((current-ks (rest (list-gen (/ 1 pop-size)))))
       (dotimes (i num-gen)
                (with-open-file (str "evol-log.txt"
                                     :direction :output
                                     :if-exists :append
                                     :if-does-not-exist :create)
-                 (format str "~A," i)
-                 (format str "~A," current-ks))
-               (setf current-ks (reproduce current-ks pop-size mut-sd)))))
+                 (let
+                   ((all-fitness (compute-all-fitness current-ks))
+                    (new-ks (reproduce current-ks all-fitness pop-size mut-sd)))
+                   (format str "~A," i)
+                   (format str "~A," current-ks)
+                   (format str "~A," all-fitness)
+                   (format str "~A~%" new-ks)
+                   (setf current-ks new-ks))))))
