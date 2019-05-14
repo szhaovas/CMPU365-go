@@ -35,4 +35,6 @@
   (compile-file "test")
   (load "test")
   (compile-file "data")
-  (load "data"))
+  (load "data")
+  (compile-file "evol_alg")
+  (load "evol_alg"))
