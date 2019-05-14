@@ -61,7 +61,7 @@
            (num-children (nth max-ind scaled-fitnesses))
            (k (nth max-ind ks)))
           (dotimes (i num-children)
-                   (push new-ks (mutate k mut-sd))
+                   (push (mutate k mut-sd) new-ks)
                    (when (= (length new-ks) pop-size)
                      (format str "~A," fitnesses)
                      (format str "~A~%" new-ks)
