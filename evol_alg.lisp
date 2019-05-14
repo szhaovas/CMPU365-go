@@ -22,15 +22,15 @@
   (k)
   (let
     ((fitness 10))
-    (dotimes (i 1)
+    (dotimes (i 5)
              (let
-               ((result (compete-mcrave-benchmark 100 k)))
+               ((result (compete-mcrave-benchmark 2000 k)))
                (cond
                  ((eq result *black*) (incf fitness))
                  ((eq result *white*) (decf fitness)))))
-    (dotimes (i 1)
+    (dotimes (i 5)
              (let
-               ((result (compete-benchmark-mcrave 100 k)))
+               ((result (compete-benchmark-mcrave 2000 k)))
                (cond
                  ((eq result *white*) (incf fitness))
                  ((eq result *black*) (decf fitness)))))
