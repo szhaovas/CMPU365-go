@@ -23,13 +23,17 @@
   (let
     ((fitness 10))
     (dotimes (i 1)
-             (case (compete-mcrave-benchmark 100 k)
-               (*black* (incf fitness))
-               (*white* (decf fitness))))
+             (let
+               ((result (compete-mcrave-benchmark 100 k)))
+               (cond
+                 ((eq result *black*) (incf fitness))
+                 ((eq result *white*) (decf fitness)))))
     (dotimes (i 1)
-             (case (compete-benchmark-mcrave 100 k)
-               (*white* (incf fitness))
-               (*black* (decf fitness))))
+             (let
+               ((result (compete-benchmark-mcrave 100 k)))
+               (cond
+                 ((eq result *white*) (incf fitness))
+                 ((eq result *black*) (decf fitness)))))
     fitness))
 
 (defun compute-all-fitness
