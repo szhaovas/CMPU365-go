@@ -1,13 +1,3 @@
-(defun normal-random (mean std-dev)
-  (do* ((rand-u (* 2 (- 0.5 (random 1.0))) (* 2 (- 0.5 (random 1.0))))
-        (rand-v (* 2 (- 0.5 (random 1.0))) (* 2 (- 0.5 (random 1.0))))
-        (rand-s (+ (* rand-u rand-u) (* rand-v rand-v))
-                (+ (* rand-u rand-u) (* rand-v rand-v))))
-    ((not (or (= 0 rand-s) (>= rand-s 1)))
-     (+ mean
-      (* std-dev
-        (* rand-u (sqrt (/ (* -2.0 (log rand-s)) rand-s))))))))
-
 (defun list-gen
   (step)
   (let ((counter 0)
