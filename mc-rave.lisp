@@ -1,52 +1,12 @@
-;; ========================================
-;;  CMPU-365, Spring 2019
-;;  Monte Carlo Tree Search
-;; ========================================
-;;  An implementation of the MCTS algorithm
-
-;;  Defines the following functions used by MCTS algorithm
-;; ----------------------------------------------------------
-;;     GET-ROOT-NODE
-;;     NEW-MC-TREE
-;;     INSERT-NEW-NODE
-;;     SIM-TREE
-;;     SIM-DEFAULT
-;;     BACKUP
-;;     UCT-SEARCH
-;;     SELECT-MOVE
-
-;;  In addition, for testing, defines:  COMPETE
-
-;;  The MCTS functions call the following DOMAIN-DEPENDENT
-;;  functions that are defined in "othello-starter.lisp":
-;; ------------------------------------------------------------------
-;;     COPY-GAME               -- creates a copy of the given othello game board
-;;     MAKE-HASH-KEY-FROM-GAME -- returns list of the form (WHITE-PCS BLACK-PCS WHOSE-TURN)
-;;     WHOSE-TURN              -- returns *BLACK* or *WHITE*
-
-;;  The MCTS functions call the following DOMAIN-DEPENDENT
-;;  functions that are defined in "othello-the-rest.lisp":
-;; ------------------------------------------------------------------
-;;     DO-MOVE!        --  does a move (destructively modifies game struct)
-;;     LEGAL-MOVES     --  returns VECTOR of legal moves
-;;     GAME-OVER?      --  returns T or NIL
-;;     DEFAULT-POLICY  --  returns random legal move
-
-
-;;  Note:  If a player has no legal moves, but the game isn't over, then that
-;;         player *must* pass...
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;  This file contains the implementation of MC-RAVE and UCT-RAVE for Gomoku
+;;  Since most of it can be transferred from stock MCTS, I will only comment
+;;  where changes are made
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;  MC-NODE struct -- a node in the MCTS tree
 ;; ----------------------------------------------------------------------------
-;;  KEY:          a hash-table key (compact rep'n of current state of game)
-;;  WHOSE-TURN:   *BLACK* or *WHITE*
-;;  NUM-VISITS:   the number of times this state has been visited
-;;  VECK-MOVES:   a VECTOR of the legal moves from this state
-;;  VECK-VISITS:  a VECTOR recording the number of times each legal move
-;;                   has been visited during MCTS
-;;  VECK-SCORES:  a VECTOR recording the average scores for the legal
-;;                   moves visited during MCTS
+;;  On top of original mc-node, this RAVE version also stores AMAF information
 
 (defstruct mc-node
   key
@@ -59,35 +19,13 @@
   amaf-scores
   )
 
-;;  MC-TREE struct -- the MCTS tree
-;; -------------------------------------------------------------
-;;  HASHY:     a hash-table whose entries are (key,value), where
-;;               key = compact repn of state, value = mc-node
-;;  ROOT-KEY:  the hash-table key for the root node of the mcts tree
-
 (defstruct mc-tree
   (hashy (make-hash-table :test #'equal))
   root-key)
 
-;;  GET-ROOT-NODE
-;; ------------------------------------------------------
-;;  INPUT:   TREE, a MCTS struct
-;;  OUTPUT:  The MC-NODE corresponding to the root of the TREE
-
 (defun get-root-node
     (tree)
   (gethash (mc-tree-root-key tree) (mc-tree-hashy tree)))
-
-;; -------------------------------------------------
-;;  Easiest to define the necessary functions
-;;  in the following order
-;; -------------------------------------------------
-
-;;  NEW-MC-TREE
-;; ---------------------------------
-;;  INPUT:   GAME, a game struct
-;;  OUTPUT:  A new MC tree whose root state is derived
-;;           from GAME.
 
 (defun new-mc-tree
     (game)
@@ -96,11 +34,7 @@
 
 ;;  INSERT-NEW-NODE
 ;; -----------------------------------------
-;;  INPUTS:  GAME, a game struct
-;;           TREE, an MC-TREE struct
-;;           KEY, a hash-key representing the state of the game
-;;  OUTPUT:  The newly created and inserted node
-;;  SIDE EFFECT:  Inserts a new node into TREE using KEY.
+;;  Adds initialization for AMAF information
 
 (defun insert-new-node
   (game tree key)
@@ -122,7 +56,7 @@
 ;;  SELECT-MOVE
 ;; ------------------------------------------
 ;;  INPUTS:  NODEY, an MC-NODE struct
-;;           C, exploitation-exploration constant
+;;           k, equivalence parameter
 ;;  OUTPUT:  The INDEX of the selected move into the moves vector
 
 (defun select-move
@@ -132,20 +66,17 @@
    	 (moves (mc-node-veck-moves nodey))
    	 (num-moves (length moves)))
     (cond
-      ;; No legal moves!
       ((= num-moves 0)
-       ;; signal failure
        nil)
-      ;; Only one legal move
       ((= num-moves 1)
-       ;; return it
        0)
-      ;; Two or more moves
       (t
        (let*
          ((n (mc-node-num-visits nodey))
+          ;; corresponds to β, derived from formula 19 from gelly-silver
           (beta (sqrt (/ k (+ (* n 3) k))))
           (mc-scoress (mc-node-veck-scores nodey))
+          ;; amaf score
           (amaf-scoress (mc-node-amaf-scores nodey))
      	    (best-move-so-far nil)
      	    (best-score-so-far (if (eq player *black*)
@@ -153,12 +84,12 @@
                                *pos-inf*)))
          (dotimes
           (i num-moves)
-     	    ;; Fetch weighted score for this move
      	    (let*
             ((mc-score (svref mc-scoress i))
              (amaf-score (svref amaf-scoress i))
+             ;; weighted score between MC and AMAF, derived from formula 12
+             ;; from gelly-silver
              (weighted-score (+ (* (- 1 beta) mc-score) (* beta amaf-score))))
-     	      ;; When SCORE is better than best-score-so-far...
      	      (when
               (or
                (and
@@ -167,13 +98,16 @@
                (and
                 (eq player *white*)
                 (< weighted-score best-score-so-far)))
-              ;; Update best-score/move-so-far
               (setf best-score-so-far weighted-score)
               (setf best-move-so-far i))))
-        	;; Return best-move-so-far or (if NIL) a random move
          (if best-move-so-far
            best-move-so-far
            (random num-moves)))))))
+
+;;  SELECT-MOVE-UCT
+;; ------------------------------------------
+;;  The UCT variant of select-move, only different by the addition of exploration
+;;  term
 
 (defun select-move-uct
   (nodey k c)
@@ -182,15 +116,10 @@
    	 (moves (mc-node-veck-moves nodey))
    	 (num-moves (length moves)))
     (cond
-      ;; No legal moves!
       ((= num-moves 0)
-       ;; signal failure
        nil)
-      ;; Only one legal move
       ((= num-moves 1)
-       ;; return it
        0)
-      ;; Two or more moves
       (t
        (let*
          ((n (mc-node-num-visits nodey))
@@ -204,14 +133,13 @@
          (when (zerop 0) (return-from select-move-uct (random num-moves)))
          (dotimes
           (i num-moves)
-     	    ;; Fetch weighted score for this move
      	    (let*
             ((mc-score (svref mc-scoress i))
              (amaf-score (svref amaf-scoress i))
              (weighted-score (+ (* (- 1 beta) mc-score) (* beta amaf-score)))
+             ;; adds exploration term
              (uct-score (+ weighted-score (* c (sqrt (/ (log n)
                                                         (svref (mc-node-veck-visits nodey) i)))))))
-     	      ;; When SCORE is better than best-score-so-far...
      	      (when
               (or
                (and
@@ -220,10 +148,8 @@
                (and
                 (eq player *white*)
                 (< uct-score best-score-so-far)))
-              ;; Update best-score/move-so-far
               (setf best-score-so-far uct-score)
               (setf best-move-so-far i))))
-        	;; Return best-move-so-far or (if NIL) a random move
          (if best-move-so-far
            best-move-so-far
            (random num-moves)))))))
@@ -233,24 +159,17 @@
 ;; --------------------------------------
 ;;  INPUTS:  GAME, a game struct
 ;;           TREE, an MC-TREE struct
-;;           C, the exploration/exploitation constant
-;;  OUTPUT:  A list of the form (state0 move0 state1 move1 ... statek movek)
-;;    where each state_i is a key into the hashtable, and each move_i
-;;    is an index into the MOVES vector of the node assoc with state_i.
+;;           k, equivalence parameter
+;;  Identical to original SIM-TREE except for functions specific to gomoku
 
 (defun sim-tree
   (game tree k)
-  (let (;; KEY-MOVE-ACC:  accumulator of KEYs and MOVEs
-       	(key-move-acc nil)
+  (let ((key-move-acc nil)
        	(hashy (mc-tree-hashy tree)))
     (while (not (game-over? game))
-      (let* (;; KEY:  Hash key for current state of game
-       	     (key (make-hash-key-from-game game))
-       	     ;; NODEY:  The MC-NODE corresponding to KEY (or NIL if not in tree)
+      (let* ((key (make-hash-key-from-game game))
        	     (nodey (gethash key hashy)))
-       	;; Case 1:  When key not yet in tree...
        	(when (null nodey)
-       	  ;; Create new node and insert it into tree
        	  (setf nodey (insert-new-node game tree key))
        	  (let* ((mv-index (select-move nodey k))
                  (move-veck (mc-node-veck-moves nodey))
@@ -258,34 +177,27 @@
        	    (apply #'do-move! game move)
        	    (push key key-move-acc)
        	    (push mv-index key-move-acc)
-       	    ;; return the accumulator prepended with selected MOVE
-       	    ;; and KEY for current state
        	    (return-from sim-tree (reverse key-move-acc))))
-
-       	;; Case 2:  Key already in tree!
        	(let* ((mv-index (select-move nodey k))
        	       (move-veck (mc-node-veck-moves nodey))
        	       (move (svref move-veck mv-index)))
        	  (apply #'do-move! game move)
        	  (push key key-move-acc)
        	  (push mv-index key-move-acc))))
-
-    ;; After the WHILE... return the accumulated key/move list
     (reverse key-move-acc)))
+
+;;  SIM-TREE-UCT
+;; ------------------------------------------
+;;  The UCT variant of sim-tree, only different by the call to SELECT-MOVE-UCT
 
 (defun sim-tree-uct
   (game tree k c)
-  (let (;; KEY-MOVE-ACC:  accumulator of KEYs and MOVEs
-       	(key-move-acc nil)
+  (let ((key-move-acc nil)
        	(hashy (mc-tree-hashy tree)))
     (while (not (game-over? game))
-      (let* (;; KEY:  Hash key for current state of game
-       	     (key (make-hash-key-from-game game))
-       	     ;; NODEY:  The MC-NODE corresponding to KEY (or NIL if not in tree)
+      (let* ((key (make-hash-key-from-game game))
        	     (nodey (gethash key hashy)))
-       	;; Case 1:  When key not yet in tree...
        	(when (null nodey)
-       	  ;; Create new node and insert it into tree
        	  (setf nodey (insert-new-node game tree key))
        	  (let* ((mv-index (select-move-uct nodey k c))
                  (move-veck (mc-node-veck-moves nodey))
@@ -293,27 +205,23 @@
        	    (apply #'do-move! game move)
        	    (push key key-move-acc)
        	    (push mv-index key-move-acc)
-       	    ;; return the accumulator prepended with selected MOVE
-       	    ;; and KEY for current state
        	    (return-from sim-tree-uct (reverse key-move-acc))))
-
-       	;; Case 2:  Key already in tree!
        	(let* ((mv-index (select-move-uct nodey k c))
        	       (move-veck (mc-node-veck-moves nodey))
        	       (move (svref move-veck mv-index)))
        	  (apply #'do-move! game move)
        	  (push key key-move-acc)
        	  (push mv-index key-move-acc))))
-
-    ;; After the WHILE... return the accumulated key/move list
     (reverse key-move-acc)))
 
-;;  SIM-DEFAULT
+;;  RESULT-WRAPPER
 ;; ----------------------------------------------
+;;  helper function of sim-default
+;;
 ;;  INPUT:   GAME, a game struct
-;;  OUTPUT:  The result of following the game's default policy
-;;             (domain-dependent method)
-
+;;           ORIG-GAME, the original game at the call of MC-RAVE
+;;  OUTPUT:  who-wins, but multiplies value by 10 if the starting player at
+;;           orig-game lost
 
 (defun result-wrapper
   (game orig-game)
@@ -325,6 +233,12 @@
         ;; if player lost increase penalty
         (* (- result) 10)))))
 
+;;  SIM-DEFAULT
+;; ----------------------------------------------
+;;  INPUT:   GAME, a game struct
+;;           ORIG-GAME, the original game at the call of MC-RAVE
+;;  OUTPUT:  A list, consisted of all the moves (in list) made by default policy
+;;           to reach result, AND the result from result-wrapper at the end
 
 (defun sim-default
   (game orig-game)
@@ -336,35 +250,43 @@
     (push (result-wrapper game orig-game) move-acc)
     (reverse move-acc)))
 
-(defun sim-default-cutoff
-  (game orig-game cutoff-depth)
-  ;;(format t "sim-default-cutoff starts!")
-  (let*
-    ((move-acc nil)
-     (orig-num-open (gomoku-num-open orig-game))
-     (num-open (gomoku-num-open game))
-     (current-depth (- orig-num-open num-open)))
-    (while (and
-            (not (game-over? game))
-            (< current-depth cutoff-depth))
-      (let ((move (random-move game)))
-        (apply #'do-move! game move)
-        (incf current-depth)
-        ;;(format t "current-depth: ~A~%" current-depth)
-        (push move move-acc)))
-    (push (eval-func game (gomoku-whose-turn game))
-          move-acc)
-    (reverse move-acc)))
 
-;;  BACKUP
-;; ---------------------------------------------------
-;;  INPUTS:  HASHY, the hash-table for the MCTS
-;;           KEY-MOVE-ACC, the accumulated list of KEYs and MOVEs
+;;  SIM-DEFAULT-CUTOFF
+;; ----------------------------------------------
+;;  A failed attempt to incorporate cutoff depth into MC-RAVE
+
+; (defun sim-default-cutoff
+;   (game orig-game cutoff-depth)
+;   ;;(format t "sim-default-cutoff starts!")
+;   (let*
+;     ((move-acc nil)
+;      (orig-num-open (gomoku-num-open orig-game))
+;      (num-open (gomoku-num-open game))
+;      (current-depth (- orig-num-open num-open)))
+;     (while (and
+;             (not (game-over? game))
+;             (< current-depth cutoff-depth))
+;       (let ((move (random-move game)))
+;         (apply #'do-move! game move)
+;         (incf current-depth)
+;         ;;(format t "current-depth: ~A~%" current-depth)
+;         (push move move-acc)))
+;     (push (eval-func game (gomoku-whose-turn game))
+;           move-acc)
+;     (reverse move-acc)))
+
+;;  MERGE-MOVES
+;; ----------------------------------------------
+;;  helper function for BACKUP
+;;
+;;  INPUTS: KEY-MOVE-ACC, the accumulated list of KEYs and MOVEs
 ;;              from a simulation run
-;;           RESULT, the result (from black's perspective) of the
-;;              recently played out simulation
-;;  OUTPUT:  doesn't matter
-;;  SIDE EFFECT:  Updates the relevant nodes in the MC-TREE/HASHY
+;;          MOVE-ACC, which contains all the moves made to reach game's end
+;;              and the result value at the end.
+;;          HASHY, the hash-table for the MCTS
+;;  OUTPUT: A list consisted of all the moves made from the START OF RAVE
+;;              (including the tree moves) to the end of game
+;;              All moves are represented as lists
 
 (defun merge-moves
   (key-move-acc move-acc hashy)
@@ -389,17 +311,10 @@
       simtree-moves))
     (append (reverse simtree-moves) move-acc)))
 
-; (defun sublist-member
-;   (item listy till)
-;   (let ((i 0))
-;     (while (<= i (- till 2))
-;       (when
-;         (equal
-;          item
-;          (nth i listy))
-;         (return-from sublist-member t))
-;       (incf i 2))
-;     nil))
+;;  ARRAY-MEMBER
+;; ----------------------------------------------
+;;  helper for BACKUP
+;;  Array membership check, item index if item in arr, nil if not
 
 (defun array-member
   (item arr)
@@ -412,8 +327,18 @@
      (return-from array-member i)))
   nil)
 
+;;  BACKUP
+;; ---------------------------------------------------
+;;  INPUTS:  HASHY, the hash-table for the MCTS
+;;           KEY-MOVE-ACC, the accumulated list of KEYs and MOVEs
+;;              from a simulation run
+;;           MOVE-ACC, which contains all the moves made to reach game's end
+;;              and the result value at the end.
+;;  SIDE EFFECT:  Updates the relevant nodes in the TREE
+
 (defun backup
   (hashy key-move-acc move-acc)
+  ;; masks the move-acc with the merged-moves
   (setf move-acc (merge-moves key-move-acc move-acc hashy))
   (let ((result (first (last move-acc))))
     (while key-move-acc
@@ -426,67 +351,53 @@
          (mc-scores (mc-node-veck-scores nodey))
          (amaf-visits (mc-node-amaf-visits nodey))
          (amaf-scores (mc-node-amaf-scores nodey)))
-        ; (format t "~A~%" key-move-acc)
-        ; (format t "~A~%" move-acc)
-        ; (format t "~A~%" veck-moves)
-        ;; increment MC stats
+        ;; updates the MC visits and scores
         (incf (mc-node-num-visits nodey))
         (incf (svref mc-visits mv-index))
         (incf (svref mc-scores mv-index)
          	    (/ (- result (svref mc-scores mv-index))
          	       (svref mc-visits mv-index)))
+        ;; updates the AMAF visits and scores
+        ;; No need to check for repeated moves because no two moves can be the same
         (let ((i 0))
-          ;; the last entry is result
           (while (< i (- (length move-acc) 1))
             (let*
               ((mv (nth i move-acc))
-               ;; is move_i legal at current state?
                (legal-p (array-member mv veck-moves)))
-              ; (format t "move ~A~%" mv)
-              ; (format t "check legal ~A~%" legal-p)
               (when
-                ;; move-i is legal at current state
+                ;; when move is legal...
                 legal-p
-                ;; updates AMAF
+                ;; update
                 (incf (svref amaf-visits legal-p))
                 (incf (svref amaf-scores legal-p)
                  	    (/ (- result (svref amaf-scores legal-p))
-                 	       (svref amaf-visits legal-p))))
-              ;(format t "amaf score ~A~%" (svref amaf-visits legal-p))
-              )
+                 	       (svref amaf-visits legal-p)))))
+            ;; only consider moves of the same color
             (incf i 2))
           (setf move-acc (rest move-acc)))))))
 
-;;  UCT-SEARCH
+;;  MC-RAVE
 ;; ---------------------------------
 ;;  INPUTS:  ORIG-GAME, a game struct
 ;;           NUM-SIMS, a positive integer
-;;           C, the exploration/exploitation parameter
+;;           k, the equivalence parameter
 ;;  OUTPUT:  Best move from that state determined by
-;;             doing *NUM-SIMS* simulations of MCTS.
+;;             doing *NUM-SIMS* simulations of MCTS-RAVE.
 
 (defparameter *verbose* t) ;; a global parameter used to ensure/suppress printing of stats
 
 (defun mc-rave
   (orig-game num-sims k)
-  ;; Want to use COPY of GAME struct for simulations...
-  ;; That way, can reset game struct before each simulation...
   (let* ((tree (new-mc-tree orig-game))
        	 (hashy (mc-tree-hashy tree))
-       	 ;;(player (whose-turn orig-game))
+         ;; k must NOT be 0, mask and reset with 0.0000001
        	 (k k))
     (when (zerop k) (setf k 0.0000001))
     (dotimes (i num-sims)
-             (let* (;; Work with a COPY of the original game struct
-              	     (game (copy-game orig-game))
-              	     ;; Phase 1:  SIM-TREE Destructively modifies game
+             (let* ((game (copy-game orig-game))
               	     (key-move-acc (sim-tree game tree k))
-              	     ;; Phase 2:  SIM-DEFAULT returns result
               	     (move-acc (sim-default game orig-game)))
-              	;; Finally, backup the results
-               ;(format t "--------------------------------------backup~A~%" i)
               	(backup hashy key-move-acc move-acc)))
-    ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
        	   (mv-index (select-move rootie k))
        	   (move (svref (mc-node-veck-moves rootie) mv-index))
@@ -495,7 +406,6 @@
            (amaf-scores (mc-node-amaf-scores rootie)))
       (format t ".")
       (when *verbose*
-       	;; Display some stats along with the best move
         (format t "moves veck: ~A~%" (mc-node-veck-moves rootie))
        	(format t "mc-scores veck: ")
        	(dotimes (i (length scores))
@@ -508,29 +418,30 @@
         (format t "AMAF Visits veck: ~A" amaf-visits)
        	(format t "~%")
         (format t "AMAF Scores veck ~A~%" amaf-scores))
-      ;; Output the move
       move)))
+
+;;  UCT-RAVE
+;; ---------------------------------
+;;  UCT variant of MC-RAVE
+;;  INPUTS:  ORIG-GAME, a game struct
+;;           NUM-SIMS, a positive integer
+;;           k, the equivalence parameter
+;;           c, the exploration parameter
+;;  OUTPUT:  Best move from that state determined by
+;;             doing *NUM-SIMS* simulations of UCT-RAVE.
 
 (defun uct-rave
   (orig-game num-sims k c)
-  ;; Want to use COPY of GAME struct for simulations...
-  ;; That way, can reset game struct before each simulation...
   (let* ((tree (new-mc-tree orig-game))
        	 (hashy (mc-tree-hashy tree))
-       	 ;;(player (whose-turn orig-game))
+         ;; k must NOT be 0, mask and reset with 0.0000001
        	 (k k))
     (when (zerop k) (setf k 0.0000001))
     (dotimes (i num-sims)
-             (let* (;; Work with a COPY of the original game struct
-              	     (game (copy-game orig-game))
-              	     ;; Phase 1:  SIM-TREE Destructively modifies game
+             (let* ((game (copy-game orig-game))
               	     (key-move-acc (sim-tree-uct game tree k c))
-              	     ;; Phase 2:  SIM-DEFAULT returns result
               	     (move-acc (sim-default game orig-game)))
-              	;; Finally, backup the results
-               ;(format t "--------------------------------------backup~A~%" i)
               	(backup hashy key-move-acc move-acc)))
-    ;; Select the best move (using c = 0 because we are not exploring anymore)
     (let* ((rootie (get-root-node tree))
        	   (mv-index (select-move-uct rootie k c))
        	   (move (svref (mc-node-veck-moves rootie) mv-index))
@@ -539,7 +450,6 @@
            (amaf-scores (mc-node-amaf-scores rootie)))
       (format t ".")
       (when *verbose*
-       	;; Display some stats along with the best move
         (format t "moves veck: ~A~%" (mc-node-veck-moves rootie))
        	(format t "mc-scores veck: ")
        	(dotimes (i (length scores))
@@ -552,49 +462,48 @@
         (format t "AMAF Visits veck: ~A" amaf-visits)
        	(format t "~%")
         (format t "AMAF Scores veck ~A~%" amaf-scores))
-      ;; Output the move
       move)))
 
-(defun mc-rave-cutoff
-  (orig-game num-sims cutoff-depth k)
-  ;; Want to use COPY of GAME struct for simulations...
-  ;; That way, can reset game struct before each simulation...
-  (let* ((tree (new-mc-tree orig-game))
-       	 (hashy (mc-tree-hashy tree))
-       	 ;;(player (whose-turn orig-game))
-       	 (k k))
-    (when (zerop k) (setf k 0.0000001))
-    (dotimes (i num-sims)
-             (let* (;; Work with a COPY of the original game struct
-              	     (game (copy-game orig-game))
-              	     ;; Phase 1:  SIM-TREE Destructively modifies game
-              	     (key-move-acc (sim-tree game tree k))
-              	     ;; Phase 2:  SIM-DEFAULT returns result
-              	     (move-acc (sim-default-cutoff game orig-game cutoff-depth)))
-              	;; Finally, backup the results
-               ;(format t "--------------------------------------backup~A~%" i)
-              	(backup hashy key-move-acc move-acc)))
-    ;; Select the best move (using c = 0 because we are not exploring anymore)
-    (let* ((rootie (get-root-node tree))
-       	   (mv-index (select-move rootie k))
-       	   (move (svref (mc-node-veck-moves rootie) mv-index))
-       	   (scores (mc-node-veck-scores rootie))
-           (amaf-visits (mc-node-amaf-visits rootie))
-           (amaf-scores (mc-node-amaf-scores rootie)))
-      (format t ".")
-      (when *verbose*
-       	;; Display some stats along with the best move
-        (format t "moves veck: ~A~%" (mc-node-veck-moves rootie))
-       	(format t "mc-scores veck: ")
-       	(dotimes (i (length scores))
-                	(format t "~5,3F, " (svref scores i)))
-       	(format t "~%")
-       	(format t "mc-visits veck: ")
-       	(dotimes (i (length scores))
-              	  (format t "~A " (svref (mc-node-veck-visits rootie) i)))
-        (format t "~%")
-        (format t "AMAF Visits veck: ~A" amaf-visits)
-       	(format t "~%")
-        (format t "AMAF Scores veck ~A~%" amaf-scores))
-      ;; Output the move
-      move)))
+; (defun mc-rave-cutoff
+;   (orig-game num-sims cutoff-depth k)
+;   ;; Want to use COPY of GAME struct for simulations...
+;   ;; That way, can reset game struct before each simulation...
+;   (let* ((tree (new-mc-tree orig-game))
+;        	 (hashy (mc-tree-hashy tree))
+;        	 ;;(player (whose-turn orig-game))
+;        	 (k k))
+;     (when (zerop k) (setf k 0.0000001))
+;     (dotimes (i num-sims)
+;              (let* (;; Work with a COPY of the original game struct
+;               	     (game (copy-game orig-game))
+;               	     ;; Phase 1:  SIM-TREE Destructively modifies game
+;               	     (key-move-acc (sim-tree game tree k))
+;               	     ;; Phase 2:  SIM-DEFAULT returns result
+;               	     (move-acc (sim-default-cutoff game orig-game cutoff-depth)))
+;               	;; Finally, backup the results
+;                ;(format t "--------------------------------------backup~A~%" i)
+;               	(backup hashy key-move-acc move-acc)))
+;     ;; Select the best move (using c = 0 because we are not exploring anymore)
+;     (let* ((rootie (get-root-node tree))
+;        	   (mv-index (select-move rootie k))
+;        	   (move (svref (mc-node-veck-moves rootie) mv-index))
+;        	   (scores (mc-node-veck-scores rootie))
+;            (amaf-visits (mc-node-amaf-visits rootie))
+;            (amaf-scores (mc-node-amaf-scores rootie)))
+;       (format t ".")
+;       (when *verbose*
+;        	;; Display some stats along with the best move
+;         (format t "moves veck: ~A~%" (mc-node-veck-moves rootie))
+;        	(format t "mc-scores veck: ")
+;        	(dotimes (i (length scores))
+;                 	(format t "~5,3F, " (svref scores i)))
+;        	(format t "~%")
+;        	(format t "mc-visits veck: ")
+;        	(dotimes (i (length scores))
+;               	  (format t "~A " (svref (mc-node-veck-visits rootie) i)))
+;         (format t "~%")
+;         (format t "AMAF Visits veck: ~A" amaf-visits)
+;        	(format t "~%")
+;         (format t "AMAF Scores veck ~A~%" amaf-scores))
+;       ;; Output the move
+;       move)))
